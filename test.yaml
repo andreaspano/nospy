@@ -11,6 +11,7 @@ models:
   - AutoNBEATS
   - AutoTFT
 evaluation_metric: MAPE
+reconciliation_method: BottomUp
 test: True
 
 

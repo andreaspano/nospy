@@ -27,3 +27,4 @@ class ExperimentConfig:
     cuda_visible_devices: str | None = "0"
 
     evaluation_metric: str = "MAPE"
+    reconciliation_method: str = "BottomUp"

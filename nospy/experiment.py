@@ -1,5 +1,6 @@
 import time
 
+import pandas as pd
 from neuralforecast import NeuralForecast
 
 from nospy.data import download_prices, prepare_timeseries
@@ -9,6 +10,7 @@ from nospy.utils import make_output_paths, setup_environment
 
 
 class ForecastExperiment:
+
     def __init__(self, config):
         self.config = config
         self.output_paths = make_output_paths(config.out_dir)
@@ -42,6 +44,28 @@ class ForecastExperiment:
             freq=self.config.freq,
         )
 
+    def add_mib_aggregate_forecast(self, df_cv):
+        id_cols = ["unique_id", "ds", "cutoff", "y"]
+
+        model_cols = [
+            col for col in df_cv.columns
+            if col not in id_cols
+        ]
+
+        df_mib = (
+            df_cv
+            .groupby(["ds", "cutoff"], as_index=False)[["y"] + model_cols]
+            .sum()
+        )
+
+        df_mib["unique_id"] = "mib"
+
+        df_mib = df_mib[
+            ["unique_id", "ds", "cutoff", "y"] + model_cols
+        ]
+
+        return pd.concat([df_cv, df_mib], ignore_index=True)
+
     def run_cross_validation(self):
         if self.ts is None:
             self.prepare_data()
@@ -58,9 +82,10 @@ class ForecastExperiment:
             refit=self.config.refit,
         )
 
-        # Only print elapsed time if needed
-        # elapsed = (time.time() - start) / 60
-        # print(f"Cross-validation elapsed time: {elapsed:.2f} minutes")
+        self.df_cv = self.add_mib_aggregate_forecast(self.df_cv)
+
+        elapsed = (time.time() - start) / 60
+        print(f"Cross-validation elapsed time: {elapsed:.2f} minutes")
 
         return self.df_cv
 
@@ -69,8 +94,16 @@ class ForecastExperiment:
             self.run_cross_validation()
 
         metric_name = getattr(self.config, "evaluation_metric", "MAPE")
-        self.df_metrics = Evaluator.compute_metrics(self.df_cv, metric_name=metric_name)
-        self.df_ranking = Evaluator.rank_models(self.df_metrics, metric_name=metric_name)
+
+        self.df_metrics = Evaluator.compute_metrics(
+            self.df_cv,
+            metric_name=metric_name,
+        )
+
+        self.df_ranking = Evaluator.rank_models(
+            self.df_metrics,
+            metric_name=metric_name,
+        )
 
         return self.df_metrics, self.df_ranking
 
