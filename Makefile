@@ -7,8 +7,12 @@ venv:
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
 
+
 run:
-	PYTHONPATH=$(shell pwd) $(PYTHON) scripts/run_experiment.py
+	PYTHONPATH=$(shell pwd) $(PYTHON) scripts/run_experiment.py --config config.yaml
+
+test:
+	PYTHONPATH=$(shell pwd) $(PYTHON) scripts/run_experiment.py --config test.yaml
 
 freeze:
 	$(PIP) freeze > requirements.txt

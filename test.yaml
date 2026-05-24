@@ -1,23 +1,15 @@
 tickers:
   - UCG.MI
   - ISP.MI
-  - BAMI.MI
-  - BPE.MI
-  - BMPS.MI
-  - FBK.MI
-  - MB.MI
-  - G.MI
-  - AZM.MI
-  - UNI.MI
 start_date: "2020-01-01"
 end_date: "2026-04-30"
-h: 1
-n_windows: 12
+h: 5
+n_windows: 3
 step_size: 1
 models:
   - AutoNHITS
   - AutoNBEATS
 evaluation_metric: MAPE
-test: False
+test: True
 
 

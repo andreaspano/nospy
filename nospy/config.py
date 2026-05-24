@@ -25,3 +25,5 @@ class ExperimentConfig:
     backend: str = "ray"
 
     cuda_visible_devices: str | None = "0"
+
+    evaluation_metric: str = "MAPE"

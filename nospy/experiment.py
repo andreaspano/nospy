@@ -68,8 +68,9 @@ class ForecastExperiment:
         if self.df_cv is None:
             self.run_cross_validation()
 
-        self.df_metrics = Evaluator.compute_metrics(self.df_cv)
-        self.df_ranking = Evaluator.rank_models(self.df_metrics)
+        metric_name = getattr(self.config, "evaluation_metric", "MAPE")
+        self.df_metrics = Evaluator.compute_metrics(self.df_cv, metric_name=metric_name)
+        self.df_ranking = Evaluator.rank_models(self.df_metrics, metric_name=metric_name)
 
         return self.df_metrics, self.df_ranking
 
