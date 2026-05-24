@@ -1,0 +1,21 @@
+[project]
+name = "nospy"
+version = "0.1.0"
+description = "NeuralForecast multi-model time series forecasting and model comparison project"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "numpy",
+    "torch",
+    "yfinance",
+    "neuralforecast",
+    "ray[tune]",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nospy*"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
