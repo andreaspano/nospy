@@ -59,7 +59,7 @@ def prepare_timeseries(df: pd.DataFrame) -> pd.DataFrame:
     ts = df.copy()
     ts["ds"] = pd.to_datetime(ts["Date"])
     ts = ts.sort_values(["unique_id", "ds"])
-    ts["y"] = ts.groupby("unique_id")["Close"].pct_change()
+    #ts["y"] = ts.groupby("unique_id")["Close"].pct_change()
     ts = ts[["unique_id", "ds", "y"]]
     ts = ts.dropna().reset_index(drop=True)
     return ts
