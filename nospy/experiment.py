@@ -3,6 +3,9 @@ import time
 import pandas as pd
 from neuralforecast import NeuralForecast
 
+
+from nospy.plot import save_plots
+
 from nospy.data import download_prices, prepare_timeseries
 from nospy.evaluation import Evaluator
 from nospy.models import ModelFactory
@@ -123,6 +126,14 @@ class ForecastExperiment:
         print(f"Metrics: {self.output_paths['metrics']}")
         print(f"Ranking: {self.output_paths['ranking']}")
 
+
+    def save_plots(self):
+        save_plots(self.df_cv, self.output_paths)
+        print("Saved plots:")
+        print(f"Forecast vs Actuals: {self.output_paths.get('forecast_vs_actuals', 'forecast_vs_actuals.png')}")
+        print(f"Scatter Forecast vs Actuals: {self.output_paths.get('scatter_forecast_vs_actuals', 'scatter_forecast_vs_actuals.png')}")
+
+
     def run(self):
         setup_environment(self.config.cuda_visible_devices)
 
@@ -130,6 +141,8 @@ class ForecastExperiment:
         self.prepare_data()
         self.run_cross_validation()
         self.evaluate()
-        self.save_results()
-
+        self.save_results()        
+        self.save_plots()
+        
         return self.df_cv, self.df_metrics, self.df_ranking
+
