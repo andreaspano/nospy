@@ -19,6 +19,9 @@ test:
 freeze:
 	$(PIP) freeze > requirements.txt
 
+install:
+	$(PIP) install -r requirements.txt
+
 clean:
 	rm -rf .venv
 	rm -rf __pycache__

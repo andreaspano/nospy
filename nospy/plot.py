@@ -28,6 +28,7 @@ def save_plots(df_cv, output_paths, config_path="config.yaml"):
     value_vars = ['y'] + [col for col in models if col in df_cv.columns]
 
     # For each ticker (unique_id), plot the full series and all forecasts
+    run_dir = output_paths["run_dir"]
     for ticker in df_cv['unique_id'].unique():
         df_ticker = df_cv[df_cv['unique_id'] == ticker].copy()
         df_long = df_ticker.melt(
@@ -41,7 +42,8 @@ def save_plots(df_cv, output_paths, config_path="config.yaml"):
         p = (
             ggplot(df_long)
             + geom_line(aes(x='ds', y='value', color='model'))
+            + facet_wrap('~cutoff', scales='free_y')
             + labs(title=f'Forecast vs Actuals: {ticker}', x='Date', y='Value')
         )
-        out_path = output_paths.get(f'forecast_vs_actuals_{ticker}', f'forecast_vs_actuals_{ticker}.png')
-        p.save(out_path)
+        out_path = run_dir / f'forecast_vs_actuals_{ticker}.png'
+        p.save(str(out_path))
