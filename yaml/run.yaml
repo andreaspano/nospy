@@ -1,26 +1,43 @@
-# Run configuration
-tickers:
-  - UCG.MI
-  - ISP.MI
-  - BAMI.MI
-  - BPE.MI
-  - BMPS.MI
-  - FBK.MI
-  - MB.MI
-  - G.MI
-  - AZM.MI
-  - UNI.MI
-start_date: "2020-01-01"
-end_date: "2026-04-30"
-h: 5
-n_windows: 12
-step_size: 1
+data:
+  tickers:
+    - UCG.MI
+    - ISP.MI
+    - BAMI.MI
+    - BPE.MI
+    - BMPS.MI
+    - FBK.MI
+    - MB.MI
+    - G.MI
+    - AZM.MI
+    - UNI.MI
+  start_date: "2020-01-01"
+  end_date: "2026-04-30"
+  freq: "B"
+
+cv:
+  h: 5
+  n_windows: 12
+  step_size: 1
+  refit: true
+
 models:
   - AutoNHITS
   - AutoNBEATS
   - AutoTFT
-evaluation_metric: MAPE
-reconciliation_method: BottomUp
-test: False
+
+tuning:
+  num_samples: 10
+  cpus: 6
+  gpus: 1
+  backend: "ray"
+
+runtime:
+  out_dir: "./out"
+  cuda_visible_devices: "0"
+  test: false
+
+evaluation:
+  metric: MAPE
+  reconciliation_method: BottomUp
 
 

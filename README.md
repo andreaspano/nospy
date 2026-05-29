@@ -5,18 +5,26 @@ A small Python module for downloading financial time series data, running Neural
 ## Project structure
 
 ```text
-forecasting_project/
-├── forecasting/
+nospy/
+├── json/
+│   ├── nhits.json
+│   ├── nbeats.json
+│   └── tft.json
+├── nospy/
 │   ├── config.py
 │   ├── data.py
 │   ├── models.py
 │   ├── evaluation.py
 │   ├── experiment.py
+│   ├── features.py
+│   ├── plot.py
 │   └── utils.py
-├── scripts/
-│   └── run_experiment.py
+├── yaml/
+│   ├── run.yaml
+│   └── test.yaml
 ├── requirements.txt
 ├── pyproject.toml
+├── main.py
 └── README.md
 ```
 
@@ -39,7 +47,7 @@ pip install -e .
 ## Run
 
 ```bash
-python scripts/run_experiment.py
+python main.py --config yaml/run.yaml
 ```
 
 Outputs are saved to:
@@ -56,10 +64,36 @@ including:
 
 ## Add more models
 
-Edit `forecasting/models.py` and add model names to the config in `scripts/run_experiment.py`.
+Edit `nospy/models.py` and add model names to `yaml/run.yaml` (or `yaml/test.yaml`).
 
 Example:
 
-```python
-models=["AutoNHITS", "AutoNBEATS"]
+```yaml
+models:
+	- AutoNHITS
+	- AutoNBEATS
+```
+
+## Per-model hyperparameters
+
+Each model has its own JSON file under json/. These files define three sections:
+
+- fixed: always applied
+- run: lists for tune.choice
+- test: fixed values for quick tests
+
+Example (json/nhits.json):
+
+```json
+{
+	"fixed": {},
+	"run": {
+		"input_size": [20, 40, 60, 80],
+		"learning_rate": [0.001, 0.0005]
+	},
+	"test": {
+		"input_size": 1,
+		"learning_rate": 0.01
+	}
+}
 ```

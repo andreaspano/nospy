@@ -1,10 +1,10 @@
 
 
 import time
-import yaml
 import argparse
 from nospy.config import ExperimentConfig
 from nospy.experiment import ForecastExperiment
+from nospy.utils import load_yaml_no_dupes
 
 def main():
     parser = argparse.ArgumentParser(description="Run forecasting experiment.")
@@ -13,10 +13,9 @@ def main():
 
     start = time.time()
 
-    with open(args.config) as f:
-        params = yaml.safe_load(f)
+    params = load_yaml_no_dupes(args.config)
 
-    config = ExperimentConfig(**params)
+    config = ExperimentConfig.from_dict(params)
 
     experiment = ForecastExperiment(config)
     df_cv, df_metrics, df_ranking, features_df = experiment.run()

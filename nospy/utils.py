@@ -3,7 +3,39 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import yaml
 import torch
+
+
+class _NoDupSafeLoader(yaml.SafeLoader):
+    pass
+
+
+def _construct_mapping(loader, node, deep=False):
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            raise ValueError(f"Duplicate key in YAML: {key}")
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_NoDupSafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_mapping,
+)
+
+
+def load_yaml_no_dupes(path: str | Path) -> dict:
+    with open(path, "r") as f:
+        data = yaml.load(f, Loader=_NoDupSafeLoader)
+
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ValueError("YAML root must be a mapping")
+    return data
 
 
 def setup_environment(cuda_visible_devices: str | None = "0") -> None:

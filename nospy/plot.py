@@ -1,17 +1,8 @@
-
-import yaml
 import pandas as pd
-from plotnine import ggplot, aes, geom_line, facet_wrap, facet_grid, labs, geom_point, geom_abline
+from plotnine import ggplot, aes, geom_line, labs
 
-def get_models_from_config(config_path="yaml/run.yaml"):
-    """
-    Load the list of models from run.yaml.
-    """
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-    return config.get("models", [])
 
-def save_plots(df_cv, output_paths, ts, config_path="yaml/run.yaml", n_obs: int = 30):
+def save_plots(df_cv, output_paths, ts, models: list[str], n_obs: int = 30):
     """
     Save forecast vs actuals plots as PNG files using plotnine.
     Args:
@@ -28,8 +19,6 @@ def save_plots(df_cv, output_paths, ts, config_path="yaml/run.yaml", n_obs: int 
     ts = ts.copy()
     ts['ds'] = pd.to_datetime(ts['ds'])
 
-    # Get models from run.yaml
-    models = get_models_from_config(config_path)
     value_vars = ['y'] + [col for col in models if col in df_cv.columns]
 
     # For each ticker (unique_id), plot the full series and all forecasts

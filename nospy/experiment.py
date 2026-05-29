@@ -17,7 +17,7 @@ class ForecastExperiment:
 
     def __init__(self, config):
         self.config = config
-        self.output_paths = make_output_paths(config.out_dir)
+        self.output_paths = make_output_paths(config.runtime.out_dir)
 
         self.raw_data = None
         self.ts = None
@@ -28,9 +28,9 @@ class ForecastExperiment:
 
     def load_data(self):
         self.raw_data = download_prices(
-            tickers=self.config.tickers,
-            start_date=self.config.start_date,
-            end_date=self.config.end_date,
+            tickers=self.config.data.tickers,
+            start_date=self.config.data.start_date,
+            end_date=self.config.data.end_date,
         )
         return self.raw_data
 
@@ -46,7 +46,7 @@ class ForecastExperiment:
 
         return NeuralForecast(
             models=models,
-            freq=self.config.freq,
+            freq=self.config.data.freq,
         )
 
     def add_mib_aggregate_forecast(self, df_cv):
@@ -79,10 +79,10 @@ class ForecastExperiment:
 
         self.df_cv = nf.cross_validation(
             df=self.ts,
-            h=self.config.h,
-            n_windows=self.config.n_windows,
-            step_size=self.config.step_size,
-            refit=self.config.refit,
+            h=self.config.cv.h,
+            n_windows=self.config.cv.n_windows,
+            step_size=self.config.cv.step_size,
+            refit=self.config.cv.refit,
         )
 
         self.df_cv = self.add_mib_aggregate_forecast(self.df_cv)
@@ -94,7 +94,7 @@ class ForecastExperiment:
         if self.df_cv is None:
             self.run_cross_validation()
 
-        metric_name = getattr(self.config, "evaluation_metric", "MAPE")
+        metric_name = self.config.evaluation.metric
 
         self.df_metrics = Evaluator.compute_metrics(
             self.df_cv,
@@ -136,14 +136,14 @@ class ForecastExperiment:
 
 
     def save_plots(self):
-        save_plots(self.df_cv, self.output_paths, self.ts, config_path="yaml/run.yaml")
+        save_plots(self.df_cv, self.output_paths, self.ts, models=self.config.models)
         print("Saved plots:")
         print(f"Forecast vs Actuals: {self.output_paths.get('forecast_vs_actuals', 'forecast_vs_actuals.png')}")
         print(f"Scatter Forecast vs Actuals: {self.output_paths.get('scatter_forecast_vs_actuals', 'scatter_forecast_vs_actuals.png')}")
 
 
     def run(self):
-        setup_environment(self.config.cuda_visible_devices)
+        setup_environment(self.config.runtime.cuda_visible_devices)
 
         self.load_data()
         self.prepare_data()

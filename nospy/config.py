@@ -1,30 +1,64 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 
 @dataclass
-class ExperimentConfig:
+class DataConfig:
     tickers: list[str]
     start_date: str
     end_date: str
+    freq: str
 
-    h: int = 5
-    n_windows: int = 12
-    step_size: int = 1
-    freq: str = "B"
 
-    models: list[str] = field(default_factory=lambda: ["AutoNHITS"])
-    test: bool = False
-    refit: bool = True
+@dataclass
+class CVConfig:
+    h: int
+    n_windows: int
+    step_size: int
+    refit: bool
 
-    out_dir: Path = Path("./out")
 
-    num_samples: int = 5
-    cpus: int = 6
-    gpus: int = 1
-    backend: str = "ray"
+@dataclass
+class TuningConfig:
+    num_samples: int
+    cpus: int
+    gpus: int
+    backend: str
 
-    cuda_visible_devices: str | None = "0"
 
-    evaluation_metric: str = "MAPE"
-    reconciliation_method: str = "BottomUp"
+@dataclass
+class RuntimeConfig:
+    out_dir: Path
+    cuda_visible_devices: str | None
+    test: bool
+
+    def __post_init__(self):
+        if isinstance(self.out_dir, str):
+            self.out_dir = Path(self.out_dir)
+
+
+@dataclass
+class EvaluationConfig:
+    metric: str
+    reconciliation_method: str
+
+
+@dataclass
+class ExperimentConfig:
+    data: DataConfig
+    cv: CVConfig
+    models: list[str]
+    tuning: TuningConfig
+    runtime: RuntimeConfig
+    evaluation: EvaluationConfig
+
+    @classmethod
+    def from_dict(cls, params: dict) -> "ExperimentConfig":
+        return cls(
+            data=DataConfig(**params["data"]),
+            cv=CVConfig(**params["cv"]),
+            models=params["models"],
+            tuning=TuningConfig(**params["tuning"]),
+            runtime=RuntimeConfig(**params["runtime"]),
+            evaluation=EvaluationConfig(**params["evaluation"]),
+        )
