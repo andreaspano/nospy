@@ -8,7 +8,7 @@ class ExperimentConfig:
     start_date: str
     end_date: str
 
-    h: int = 1
+    h: int = 5
     n_windows: int = 12
     step_size: int = 1
     freq: str = "B"

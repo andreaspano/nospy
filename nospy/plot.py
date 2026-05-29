@@ -1,7 +1,8 @@
 import pandas as pd
 
+file_cv = 'out/2026_05_29_09_36_cv.csv'
 
-df = pd.read_csv('out/2026_05_25_00_57_cv.csv')
+df = pd.read_csv(file_cv)
 
 
 #convert ds and cutoff to datetime
