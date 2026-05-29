@@ -26,37 +26,22 @@ def save_plots(df_cv, output_paths, config_path="config.yaml"):
     # Get models from config.yaml
     models = get_models_from_config(config_path)
     value_vars = ['y'] + [col for col in models if col in df_cv.columns]
-    # Melt once for both plots
-    df_long = df_cv.melt(
-        id_vars=['unique_id', 'ds', 'cutoff'],
-        value_vars=value_vars,
-        var_name='model',
-        value_name='value'
-    )
 
-    # Line plot: Forecast vs Actuals
-    pl1 = (
-        ggplot(df_long)
-        + geom_line(aes(x='ds', y='value', color='model'))
-        + facet_grid('cutoff~unique_id', scales='free_y')
-        + labs(title='Forecast vs Actuals', x='Date', y='Value')
-    )
-    pl1.save(output_paths.get('forecast_vs_actuals', 'forecast_vs_actuals.png'))
+    # For each ticker (unique_id), plot the full series and all forecasts
+    for ticker in df_cv['unique_id'].unique():
+        df_ticker = df_cv[df_cv['unique_id'] == ticker].copy()
+        df_long = df_ticker.melt(
+            id_vars=['ds', 'cutoff'],
+            value_vars=value_vars,
+            var_name='model',
+            value_name='value'
+        )
 
-    # Scatter plot: Forecast vs Actuals for all models (excluding 'y' as forecast)
-    df_scatter = df_long[df_long['model'] != 'y'].copy()
-    if not df_scatter.empty:
-        # Merge to get actuals for each row
-        df_scatter = df_scatter.merge(
-            df_long[df_long['model'] == 'y'][['unique_id', 'ds', 'cutoff', 'value']],
-            on=['unique_id', 'ds', 'cutoff'],
-            suffixes=('', '_actual')
+        # Plot: Forecast vs Actuals for this ticker
+        p = (
+            ggplot(df_long)
+            + geom_line(aes(x='ds', y='value', color='model'))
+            + labs(title=f'Forecast vs Actuals: {ticker}', x='Date', y='Value')
         )
-        pl2 = (
-            ggplot(df_scatter)
-            + geom_point(aes(x='value_actual', y='value', color='model'), size=1.5)
-            + facet_wrap('~unique_id', scales='free')
-            + labs(title='Forecast vs Actuals', x='Actual', y='Forecast')
-            + geom_abline(slope=1, intercept=0, linetype='dashed', color='gray')
-        )
-        pl2.save(output_paths.get('scatter_forecast_vs_actuals', 'scatter_forecast_vs_actuals.png'))
+        out_path = output_paths.get(f'forecast_vs_actuals_{ticker}', f'forecast_vs_actuals_{ticker}.png')
+        p.save(out_path)

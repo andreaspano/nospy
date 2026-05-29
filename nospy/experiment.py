@@ -5,6 +5,7 @@ from neuralforecast import NeuralForecast
 
 
 from nospy.plot import save_plots
+from nospy.features import build_feature_dataframe
 
 from nospy.data import download_prices, prepare_timeseries
 from nospy.evaluation import Evaluator
@@ -23,6 +24,7 @@ class ForecastExperiment:
         self.df_cv = None
         self.df_metrics = None
         self.df_ranking = None
+        self.features_df = None
 
     def load_data(self):
         self.raw_data = download_prices(
@@ -75,8 +77,6 @@ class ForecastExperiment:
 
         nf = self.build_forecaster()
 
-        start = time.time()
-
         self.df_cv = nf.cross_validation(
             df=self.ts,
             h=self.config.h,
@@ -87,10 +87,8 @@ class ForecastExperiment:
 
         self.df_cv = self.add_mib_aggregate_forecast(self.df_cv)
 
-        elapsed = (time.time() - start) / 60
-        print(f"Cross-validation elapsed time: {elapsed:.2f} minutes")
-
         return self.df_cv
+
 
     def evaluate(self):
         if self.df_cv is None:
@@ -117,9 +115,19 @@ class ForecastExperiment:
         if self.df_metrics is None or self.df_ranking is None:
             self.evaluate()
 
+        # Ensure output directory exists
+        run_dir = self.output_paths["run_dir"]
+        run_dir.mkdir(parents=True, exist_ok=True)
+
         self.df_cv.to_csv(self.output_paths["cv"], index=False)
         self.df_metrics.to_csv(self.output_paths["metrics"], index=False)
         self.df_ranking.to_csv(self.output_paths["ranking"], index=False)
+
+        # Save features
+        if self.features_df is not None:
+            features_path = run_dir / "features.csv"
+            self.features_df.to_csv(features_path, index=False)
+            print(f"Features: {features_path}")
 
         print("Saved results:")
         print(f"CV: {self.output_paths['cv']}")
@@ -139,10 +147,14 @@ class ForecastExperiment:
 
         self.load_data()
         self.prepare_data()
+
+        self.features_df = build_feature_dataframe(self.ts)
+        
+        
         self.run_cross_validation()
         self.evaluate()
-        self.save_results()        
+        self.save_results()
         self.save_plots()
-        
-        return self.df_cv, self.df_metrics, self.df_ranking
+
+        return self.df_cv, self.df_metrics, self.df_ranking, self.features_df
 
