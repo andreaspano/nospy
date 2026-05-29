@@ -8,7 +8,7 @@ from nospy.experiment import ForecastExperiment
 
 def main():
     parser = argparse.ArgumentParser(description="Run forecasting experiment.")
-    parser.add_argument("--config", type=str, default="yaml/config.yaml", help="Path to config YAML file.")
+    parser.add_argument("--config", type=str, default="yaml/run.yaml", help="Path to config YAML file.")
     args = parser.parse_args()
 
     start = time.time()

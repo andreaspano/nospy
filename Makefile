@@ -12,7 +12,7 @@ venv:
 
 
 run:
-	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/config.yaml
+	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/run.yaml
 
 
 

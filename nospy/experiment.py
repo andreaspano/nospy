@@ -136,7 +136,7 @@ class ForecastExperiment:
 
 
     def save_plots(self):
-        save_plots(self.df_cv, self.output_paths, self.ts, config_path="yaml/config.yaml")
+        save_plots(self.df_cv, self.output_paths, self.ts, config_path="yaml/run.yaml")
         print("Saved plots:")
         print(f"Forecast vs Actuals: {self.output_paths.get('forecast_vs_actuals', 'forecast_vs_actuals.png')}")
         print(f"Scatter Forecast vs Actuals: {self.output_paths.get('scatter_forecast_vs_actuals', 'scatter_forecast_vs_actuals.png')}")

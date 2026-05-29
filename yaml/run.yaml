@@ -1,11 +1,19 @@
-# This file has been moved to yaml/test.yaml
+# Run configuration
 tickers:
   - UCG.MI
   - ISP.MI
+  - BAMI.MI
+  - BPE.MI
+  - BMPS.MI
+  - FBK.MI
+  - MB.MI
+  - G.MI
+  - AZM.MI
+  - UNI.MI
 start_date: "2020-01-01"
 end_date: "2026-04-30"
 h: 5
-n_windows: 3
+n_windows: 12
 step_size: 1
 models:
   - AutoNHITS
@@ -13,6 +21,6 @@ models:
   - AutoTFT
 evaluation_metric: MAPE
 reconciliation_method: BottomUp
-test: True
+test: False
 
 
