@@ -19,13 +19,11 @@ def _load_model_params(model_key: str, test: bool = False) -> dict:
     mode_key = "test" if test else "run"
     mode_params = model_cfg.get(mode_key, {})
 
-    merged = {**fixed_params, **mode_params}
-
     if test:
-        return merged
+        return {**fixed_params, **mode_params}
 
-    tuned = {}
-    for key, value in merged.items():
+    tuned = dict(fixed_params)
+    for key, value in mode_params.items():
         tuned[key] = tune.choice(value) if isinstance(value, list) else value
     return tuned
 
