@@ -9,12 +9,16 @@ venv:
 
 
 
+
+
 run:
-	PYTHONPATH=$(shell pwd) $(PYTHON) scripts/main.py --config config.yaml
+	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/config.yaml
+
+
 
 
 test:
-	PYTHONPATH=$(shell pwd) $(PYTHON) scripts/main.py --config test.yaml
+	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/test.yaml
 
 freeze:
 	$(PIP) freeze > requirements.txt
