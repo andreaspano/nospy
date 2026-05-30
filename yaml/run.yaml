@@ -26,8 +26,8 @@ models:
   - AutoTFT
 
 tuning:
-  num_samples: 5
-  cpus: 3
+  num_samples: 10
+  cpus: 6
   gpus: 1
   backend: "ray"
 
