@@ -1,3 +1,4 @@
+from plotnine import facet_wrap
 import pandas as pd
 from plotnine import ggplot, aes, geom_line, labs
 
@@ -66,6 +67,7 @@ def save_plots(df_cv, output_paths, ts, models: list[str], n_obs: int = 30):
             ggplot(df_long)
             + geom_line(aes(x='ds', y='value', color='model'))
             + labs(title=f'Forecast vs Actuals: {ticker}', x='Date', y='Value')
+            + facet_wrap('~cutoff')
         )
         out_path = run_dir / f'forecast_vs_actuals_{ticker}.png'
         p.save(str(out_path))

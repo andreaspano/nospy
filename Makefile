@@ -14,8 +14,8 @@ venv:
 run:
 	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/run.yaml
 
-
-
+sync:
+	rsync -avz andrea@mutolo:dev/nospy/out/ ~/dev/nospy/out/
 
 test:
 	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/test.yaml
