@@ -1,11 +1,11 @@
 {
   "fixed": {},
   "run": {
-    "input_size": [20, 40, 60, 80],
-    "max_steps": [300, 500, 700],
-    "learning_rate": [0.001, 0.0005, 0.0001],
-    "batch_size": [16, 32, 64, 128],
-    "windows_batch_size": [512, 1024, 2048],
+    "input_size": [20, 40, 60],
+    "max_steps": [300, 500],
+    "learning_rate": [0.001, 0.0005],
+    "batch_size": [16, 32, 64],
+    "windows_batch_size": [256, 512, 1024],
     "n_pool_kernel_size": [
       [1, 1, 1],
       [2, 2, 1],
@@ -17,8 +17,8 @@
       [4, 2, 1]
     ],
     "scaler_type": ["robust", "standard"],
-    "random_seed": [42, 123, 2026],
-    "dropout_prob_theta": [0.0, 0.1, 0.2],
+    "random_seed": [42, 123],
+    "dropout_prob_theta": [0.0, 0.1],
     "activation": ["ReLU", "LeakyReLU", "SELU"],
     "mlp_units": [
       [[128, 128], [128, 128], [128, 128]],
