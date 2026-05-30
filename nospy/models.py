@@ -168,9 +168,7 @@ class ModelFactory:
                 and (config.tuning.searcher or "").lower() == "optuna"
                 and has_search_space
             ):
-                search_alg = OptunaSearch(
-                    space=model_config,
-                )
+                search_alg = OptunaSearch()
 
             model_kwargs = {
                 "h": config.cv.h,
