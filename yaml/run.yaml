@@ -30,6 +30,13 @@ tuning:
   cpus: 6
   gpus: 1
   backend: "ray"
+  searcher: "optuna"
+  scheduler: "asha"
+  metric: "loss"
+  mode: "min"
+  asha_max_t: 50
+  asha_grace_period: 5
+  asha_reduction_factor: 3
 
 runtime:
   out_dir: "./out"
