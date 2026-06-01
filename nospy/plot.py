@@ -25,17 +25,17 @@ def save_plots(df_cv, output_paths, ts, models: list[str], n_obs: int = 30):
     # For each ticker (unique_id), plot the full series and all forecasts
     run_dir = output_paths["run_dir"]
     tickers = list(df_cv['unique_id'].unique())
-    # Add synthetic 'mib' ticker for sum of all tickers
-    if 'mib' not in tickers:
-        tickers.append('mib')
+    # Add synthetic 'TOTAL' ticker for sum of all tickers
+    if 'TOTAL' not in tickers:
+        tickers.append('TOTAL')
 
     for ticker in tickers:
-        if ticker == 'mib':
+        if ticker == 'TOTAL':
             # Sum across all tickers for each ds
-            ts_mib = ts.groupby('ds', as_index=False)['y'].sum().sort_values('ds')
-            ts_mib['unique_id'] = 'mib'
-            ts_mib = ts_mib[['ds', 'unique_id', 'y']]
-            ts_ticker = ts_mib
+            ts_total = ts.groupby('ds', as_index=False)['y'].sum().sort_values('ds')
+            ts_total['unique_id'] = 'TOTAL'
+            ts_total = ts_total[['ds', 'unique_id', 'y']]
+            ts_ticker = ts_total
         else:
             ts_ticker = ts[ts['unique_id'] == ticker][['ds', 'y']].drop_duplicates().sort_values('ds')
 
@@ -45,8 +45,8 @@ def save_plots(df_cv, output_paths, ts, models: list[str], n_obs: int = 30):
         df_actuals = df_actuals[['ds', 'model', 'y']].rename(columns={'y': 'value'})
 
         # Forecasts: for each model, concatenate all cutoffs
-        if ticker == 'mib':
-            df_ticker = df_cv[df_cv['unique_id'] == 'mib'].copy()
+        if ticker == 'TOTAL':
+            df_ticker = df_cv[df_cv['unique_id'] == 'TOTAL'].copy()
         else:
             df_ticker = df_cv[df_cv['unique_id'] == ticker].copy()
         forecast_vars = [col for col in value_vars if col != 'y']

@@ -37,6 +37,6 @@ runtime:
 
 evaluation:
   metric: MAPE
-  reconciliation_method: BottomUp
+  reconciliation_method: wls_var
 
 

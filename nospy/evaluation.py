@@ -30,44 +30,38 @@ class Evaluator:
         results = []
 
         for model in model_cols:
-            global_metric = metric_func(df_cv["y"].values, df_cv[model].values)
-
-            by_id = (
+            by_id_cutoff = (
                 df_cv
-                .groupby("unique_id")[["y", model]]
+                .groupby(["unique_id", "cutoff"])[["y", model]]
                 .apply(lambda x: metric_func(x["y"].values, x[model].values))
                 .reset_index(name=metric_name)
             )
+            by_id_cutoff["model"] = model
+            results.append(by_id_cutoff)
 
-            by_id["model"] = model
-            results.append(by_id)
+        return pd.concat(results, ignore_index=True)[["model", "unique_id", "cutoff", metric_name]]
 
-            results.append(
-                pd.DataFrame(
-                    [{
-                        "unique_id": "GLOBAL",
-                        metric_name: global_metric,
-                        "model": model,
-                    }]
-                )
-            )
-
-        return pd.concat(results, ignore_index=True)[["model", "unique_id", metric_name]]
+    @staticmethod
+    def _add_mean_across_cutoffs(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
+        mean_rows = (
+            df.groupby(["model", "unique_id"])[metric_name]
+            .mean()
+            .reset_index()
+        )
+        mean_rows["cutoff"] = "MEAN"
+        return pd.concat([df, mean_rows], ignore_index=True)
 
     @staticmethod
     def rank_models(df_metrics: pd.DataFrame, metric_name: str = "MAPE") -> pd.DataFrame:
-        # Exclude any rows where unique_id is missing, just in case
         df_metrics = df_metrics[df_metrics["unique_id"].notnull()]
-        # Rank models for each unique_id (ticket)
         ranking = (
             df_metrics
             .copy()
-            .sort_values(["unique_id", metric_name])
+            .sort_values(["unique_id", "cutoff", metric_name])
         )
         ranking["rank"] = (
-            ranking.groupby("unique_id")[metric_name]
+            ranking.groupby(["unique_id", "cutoff"])[metric_name]
             .rank(method="min")
             .astype(int)
         )
-        # Reorder columns for clarity
-        return ranking[["unique_id", "rank", "model", metric_name]]
+        return ranking[["unique_id", "cutoff", "rank", "model", metric_name]]

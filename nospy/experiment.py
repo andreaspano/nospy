@@ -49,7 +49,7 @@ class ForecastExperiment:
             freq=self.config.data.freq,
         )
 
-    def add_mib_aggregate_forecast(self, df_cv):
+    def add_total_aggregate_forecast(self, df_cv):
         id_cols = ["unique_id", "ds", "cutoff", "y"]
 
         model_cols = [
@@ -57,19 +57,19 @@ class ForecastExperiment:
             if col not in id_cols
         ]
 
-        df_mib = (
+        df_total = (
             df_cv
             .groupby(["ds", "cutoff"], as_index=False)[["y"] + model_cols]
             .sum()
         )
 
-        df_mib["unique_id"] = "mib"
+        df_total["unique_id"] = "TOTAL"
 
-        df_mib = df_mib[
+        df_total = df_total[
             ["unique_id", "ds", "cutoff", "y"] + model_cols
         ]
 
-        return pd.concat([df_cv, df_mib], ignore_index=True)
+        return pd.concat([df_cv, df_total], ignore_index=True)
 
     def run_cross_validation(self):
         if self.ts is None:
@@ -85,7 +85,7 @@ class ForecastExperiment:
             refit=self.config.cv.refit,
         )
 
-        self.df_cv = self.add_mib_aggregate_forecast(self.df_cv)
+        self.df_cv = self.add_total_aggregate_forecast(self.df_cv)
 
         return self.df_cv
 
@@ -98,6 +98,10 @@ class ForecastExperiment:
 
         self.df_metrics = Evaluator.compute_metrics(
             self.df_cv,
+            metric_name=metric_name,
+        )
+        self.df_metrics = Evaluator._add_mean_across_cutoffs(
+            self.df_metrics,
             metric_name=metric_name,
         )
 
