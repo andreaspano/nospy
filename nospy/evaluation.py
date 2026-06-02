@@ -11,10 +11,7 @@ class Evaluator:
 
     @staticmethod
     def get_model_columns(df_cv: pd.DataFrame) -> list[str]:
-        return [
-            col for col in df_cv.columns
-            if col not in Evaluator.ID_COLUMNS
-        ]
+        return [col for col in df_cv.columns if col not in Evaluator.ID_COLUMNS]
 
     @staticmethod
     def compute_metrics(df_cv: pd.DataFrame, metric_name: str = "MAPE") -> pd.DataFrame:
@@ -31,34 +28,29 @@ class Evaluator:
 
         for model in model_cols:
             by_id_cutoff = (
-                df_cv
-                .groupby(["unique_id", "cutoff"])[["y", model]]
+                df_cv.groupby(["unique_id", "cutoff"])[["y", model]]
                 .apply(lambda x: metric_func(x["y"].values, x[model].values))
                 .reset_index(name=metric_name)
             )
             by_id_cutoff["model"] = model
             results.append(by_id_cutoff)
 
-        return pd.concat(results, ignore_index=True)[["model", "unique_id", "cutoff", metric_name]]
+        return pd.concat(results, ignore_index=True)[
+            ["model", "unique_id", "cutoff", metric_name]
+        ]
 
     @staticmethod
-    def _add_mean_across_cutoffs(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
-        mean_rows = (
-            df.groupby(["model", "unique_id"])[metric_name]
-            .mean()
-            .reset_index()
-        )
+    def add_mean_across_cutoffs(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
+        mean_rows = df.groupby(["model", "unique_id"])[metric_name].mean().reset_index()
         mean_rows["cutoff"] = "MEAN"
         return pd.concat([df, mean_rows], ignore_index=True)
 
     @staticmethod
-    def rank_models(df_metrics: pd.DataFrame, metric_name: str = "MAPE") -> pd.DataFrame:
+    def rank_models(
+        df_metrics: pd.DataFrame, metric_name: str = "MAPE"
+    ) -> pd.DataFrame:
         df_metrics = df_metrics[df_metrics["unique_id"].notnull()]
-        ranking = (
-            df_metrics
-            .copy()
-            .sort_values(["unique_id", "cutoff", metric_name])
-        )
+        ranking = df_metrics.copy().sort_values(["unique_id", "cutoff", metric_name])
         ranking["rank"] = (
             ranking.groupby(["unique_id", "cutoff"])[metric_name]
             .rank(method="min")

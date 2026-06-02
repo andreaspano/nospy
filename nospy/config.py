@@ -26,7 +26,7 @@ class TuningConfig:
     backend: str
     searcher: str | None = None
     scheduler: str | None = None
-    metric: str | None = None
+    tune_objective: str | None = None
     mode: str | None = None
     asha_max_t: int | None = None
     asha_grace_period: int | None = None
@@ -47,7 +47,7 @@ class RuntimeConfig:
 @dataclass
 class EvaluationConfig:
     metric: str
-    reconciliation_method: str
+    reconciliation_method: str = "BottomUp"
 
 
 @dataclass

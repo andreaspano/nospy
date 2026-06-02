@@ -24,7 +24,7 @@ tuning:
   backend: "ray"
   searcher: "optuna"
   scheduler: "asha"
-  metric: "loss"
+  tune_objective: "loss"
   mode: "min"
   asha_max_t: 5
   asha_grace_period: 1

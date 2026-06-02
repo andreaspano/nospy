@@ -1,9 +1,7 @@
-import time
-
 import pandas as pd
 from neuralforecast import NeuralForecast
 
-
+from nospy.config import ExperimentConfig
 from nospy.plot import save_plots
 from nospy.features import build_feature_dataframe
 
@@ -11,11 +9,11 @@ from nospy.data import download_prices, prepare_timeseries
 from nospy.evaluation import Evaluator
 from nospy.models import ModelFactory
 from nospy.utils import make_output_paths, setup_environment
+from nospy.reconcile import reconcile
 
 
 class ForecastExperiment:
-
-    def __init__(self, config):
+    def __init__(self, config: ExperimentConfig) -> None:
         self.config = config
         self.output_paths = make_output_paths(config.runtime.out_dir)
 
@@ -26,7 +24,7 @@ class ForecastExperiment:
         self.df_ranking = None
         self.features_df = None
 
-    def load_data(self):
+    def load_data(self) -> pd.DataFrame:
         self.raw_data = download_prices(
             tickers=self.config.data.tickers,
             start_date=self.config.data.start_date,
@@ -34,14 +32,14 @@ class ForecastExperiment:
         )
         return self.raw_data
 
-    def prepare_data(self):
+    def prepare_data(self) -> pd.DataFrame:
         if self.raw_data is None:
             self.load_data()
 
         self.ts = prepare_timeseries(self.raw_data)
         return self.ts
 
-    def build_forecaster(self):
+    def build_forecaster(self) -> NeuralForecast:
         models = ModelFactory.build(self.config)
 
         return NeuralForecast(
@@ -49,29 +47,7 @@ class ForecastExperiment:
             freq=self.config.data.freq,
         )
 
-    def add_total_aggregate_forecast(self, df_cv):
-        id_cols = ["unique_id", "ds", "cutoff", "y"]
-
-        model_cols = [
-            col for col in df_cv.columns
-            if col not in id_cols
-        ]
-
-        df_total = (
-            df_cv
-            .groupby(["ds", "cutoff"], as_index=False)[["y"] + model_cols]
-            .sum()
-        )
-
-        df_total["unique_id"] = "TOTAL"
-
-        df_total = df_total[
-            ["unique_id", "ds", "cutoff", "y"] + model_cols
-        ]
-
-        return pd.concat([df_cv, df_total], ignore_index=True)
-
-    def run_cross_validation(self):
+    def run_cross_validation(self) -> pd.DataFrame:
         if self.ts is None:
             self.prepare_data()
 
@@ -85,12 +61,16 @@ class ForecastExperiment:
             refit=self.config.cv.refit,
         )
 
-        self.df_cv = self.add_total_aggregate_forecast(self.df_cv)
-
         return self.df_cv
 
+    def reconcile_forecasts(self) -> None:
+        """Reconcile base forecasts using the configured hierarchical method."""
+        method = self.config.evaluation.reconciliation_method
+        if not method:
+            return
+        self.df_cv = reconcile(self.df_cv, method=method)
 
-    def evaluate(self):
+    def evaluate(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         if self.df_cv is None:
             self.run_cross_validation()
 
@@ -100,7 +80,7 @@ class ForecastExperiment:
             self.df_cv,
             metric_name=metric_name,
         )
-        self.df_metrics = Evaluator._add_mean_across_cutoffs(
+        self.df_metrics = Evaluator.add_mean_across_cutoffs(
             self.df_metrics,
             metric_name=metric_name,
         )
@@ -112,7 +92,7 @@ class ForecastExperiment:
 
         return self.df_metrics, self.df_ranking
 
-    def save_results(self):
+    def save_results(self) -> None:
         if self.df_cv is None:
             raise ValueError("No cross-validation results to save.")
 
@@ -138,29 +118,24 @@ class ForecastExperiment:
         print(f"Metrics: {self.output_paths['metrics']}")
         print(f"Ranking: {self.output_paths['ranking']}")
 
-
-    def save_plots(self):
+    def write_forecast_plots(self) -> None:
         id_cols = {"unique_id", "ds", "cutoff", "y"}
         model_cols = [c for c in self.df_cv.columns if c not in id_cols]
         save_plots(self.df_cv, self.output_paths, self.ts, models=model_cols)
-        print("Saved plots:")
-        print(f"Forecast vs Actuals: {self.output_paths.get('forecast_vs_actuals', 'forecast_vs_actuals.png')}")
-        print(f"Scatter Forecast vs Actuals: {self.output_paths.get('scatter_forecast_vs_actuals', 'scatter_forecast_vs_actuals.png')}")
+        print(f"Saved plots: {self.output_paths['run_dir']}")
 
-
-    def run(self):
+    def run(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         setup_environment(self.config.runtime.cuda_visible_devices)
 
         self.load_data()
         self.prepare_data()
 
         self.features_df = build_feature_dataframe(self.ts)
-        
-        
+
         self.run_cross_validation()
+        self.reconcile_forecasts()
         self.evaluate()
         self.save_results()
-        self.save_plots()
+        self.write_forecast_plots()
 
         return self.df_cv, self.df_metrics, self.df_ranking, self.features_df
-

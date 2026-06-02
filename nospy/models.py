@@ -1,4 +1,5 @@
 import json
+import platform
 from pathlib import Path
 
 from ray import tune, air
@@ -7,6 +8,8 @@ from ray.tune.search.sample import Domain
 from ray.tune.search.optuna import OptunaSearch
 from neuralforecast.auto import AutoNHITS, AutoNBEATS, AutoTFT
 from neuralforecast.losses.pytorch import MAE, MAPE
+
+from nospy.config import ExperimentConfig
 
 _MODEL_CONFIG_DIR = Path(__file__).resolve().parents[1] / "json"
 
@@ -54,8 +57,6 @@ class _AutoWithSchedulerMixin:
         else:
             device_dict = {"cpu": cpus}
 
-        import platform
-
         trial_dirname_creator = (
             (lambda trial: f"{trial.trainable_name}_{trial.trial_id}")
             if platform.system() == "Windows"
@@ -71,7 +72,9 @@ class _AutoWithSchedulerMixin:
             "time_budget_s": time_budget,
         }
         if self._scheduler_cls is not None:
-            tune_config_kwargs["scheduler"] = self._scheduler_cls(**self._scheduler_kwargs)
+            tune_config_kwargs["scheduler"] = self._scheduler_cls(
+                **self._scheduler_kwargs
+            )
 
         tuner = tune.Tuner(
             tune.with_resources(train_fn_with_parameters, device_dict),
@@ -114,81 +117,102 @@ def _load_model_params(model_key: str, test: bool = False) -> dict:
         tuned[key] = tune.choice(value) if isinstance(value, list) else value
     return tuned
 
-def get_model_config(model_name: str, test: bool = False) -> dict:
-    return _load_model_params(model_name, test=test)
+_MODEL_MAP = {
+    "autonhits": AutoNHITSWithScheduler,
+    "autonbeats": AutoNBEATSWithScheduler,
+    "autotft": AutoTFTWithScheduler,
+}
+
+_LOSS_MAP = {"MAPE": MAPE, "MAE": MAE}
+
+
+def _build_scheduler(
+    tuning,
+) -> tuple[type | None, dict]:
+    """Return (scheduler_cls, scheduler_kwargs) for the configured scheduler."""
+    if tuning.backend != "ray" or (tuning.scheduler or "").lower() != "asha":
+        return None, {}
+
+    kwargs: dict = {}
+    if tuning.asha_max_t is not None:
+        kwargs["max_t"] = tuning.asha_max_t
+    if tuning.asha_grace_period is not None:
+        kwargs["grace_period"] = tuning.asha_grace_period
+    if tuning.asha_reduction_factor is not None:
+        kwargs["reduction_factor"] = tuning.asha_reduction_factor
+    return ASHAScheduler, kwargs
+
+
+def _build_search_alg(tuning, model_config: dict) -> OptunaSearch | None:
+    """Return an OptunaSearch instance when the config has a tunable search space."""
+    has_search_space = any(isinstance(v, Domain) for v in model_config.values())
+    if (
+        tuning.backend == "ray"
+        and (tuning.searcher or "").lower() == "optuna"
+        and has_search_space
+    ):
+        return OptunaSearch()
+    return None
+
+
+def _build_model(
+    model_name: str,
+    config: ExperimentConfig,
+    loss_cls: type,
+    scheduler_cls: type | None,
+    scheduler_kwargs: dict,
+) -> object:
+    """Instantiate a single Auto* model from config."""
+    normalized = model_name.lower()
+    model_cls = _MODEL_MAP.get(normalized)
+    if model_cls is None:
+        raise ValueError(
+            f"Unknown model '{model_name}'. "
+            f"Available models: {', '.join(_MODEL_MAP)}."
+        )
+
+    model_key = normalized.replace("auto", "")
+    model_config = _load_model_params(model_key, config.runtime.test)
+    search_alg = _build_search_alg(config.tuning, model_config)
+
+    tune_metric = config.tuning.tune_objective or "loss"
+    tune_mode = config.tuning.mode or "min"
+
+    kwargs = {
+        "h": config.cv.h,
+        "loss": loss_cls(),
+        "valid_loss": loss_cls(),
+        "config": model_config,
+        "num_samples": config.tuning.num_samples,
+        "cpus": config.tuning.cpus,
+        "gpus": config.tuning.gpus,
+        "verbose": False,
+        "backend": config.tuning.backend,
+        "scheduler_cls": scheduler_cls,
+        "scheduler_kwargs": scheduler_kwargs,
+        "tune_metric": tune_metric,
+        "tune_mode": tune_mode,
+    }
+    if search_alg is not None:
+        kwargs["search_alg"] = search_alg
+
+    return model_cls(**kwargs)
 
 
 class ModelFactory:
     @staticmethod
-    def build(config):
-        models = []
-
-        model_map = {
-            "autonhits": AutoNHITSWithScheduler,
-            "autonbeats": AutoNBEATSWithScheduler,
-            "autotft": AutoTFTWithScheduler,
-        }
-
+    def build(config: ExperimentConfig) -> list:
         metric_name = config.evaluation.metric.upper()
-        loss_cls = {"MAPE": MAPE, "MAE": MAE}.get(metric_name)
+        loss_cls = _LOSS_MAP.get(metric_name)
         if loss_cls is None:
-            raise ValueError(f"Unsupported evaluation_metric: {metric_name}")
+            raise ValueError(f"Unsupported evaluation metric: {metric_name}")
 
-        scheduler_cls = None
-        scheduler_kwargs = {}
-        tune_metric = config.tuning.metric or "loss"
-        tune_mode = config.tuning.mode or "min"
-        if config.tuning.backend == "ray":
-            if (config.tuning.scheduler or "").lower() == "asha":
-                asha_kwargs = {}
-                if config.tuning.asha_max_t is not None:
-                    asha_kwargs["max_t"] = config.tuning.asha_max_t
-                if config.tuning.asha_grace_period is not None:
-                    asha_kwargs["grace_period"] = config.tuning.asha_grace_period
-                if config.tuning.asha_reduction_factor is not None:
-                    asha_kwargs["reduction_factor"] = config.tuning.asha_reduction_factor
-                scheduler_cls = ASHAScheduler
-                scheduler_kwargs = asha_kwargs
+        scheduler_cls, scheduler_kwargs = _build_scheduler(config.tuning)
 
-        for model_name in config.models:
-            normalized_name = model_name.lower()
-            model_cls = model_map.get(normalized_name)
-            if model_cls is None:
-                raise ValueError(
-                    f"Unknown model '{model_name}'. "
-                    "Available models: AutoNHITS, AutoNBEATS, AutoTFT."
-                )
-
-            model_key = normalized_name.replace("auto", "")
-            model_config = get_model_config(model_key, config.runtime.test)
-            search_alg = None
-            has_search_space = any(isinstance(v, Domain) for v in model_config.values())
-            if (
-                config.tuning.backend == "ray"
-                and (config.tuning.searcher or "").lower() == "optuna"
-                and has_search_space
-            ):
-                search_alg = OptunaSearch()
-
-            model_kwargs = {
-                "h": config.cv.h,
-                "loss": loss_cls(),
-                "valid_loss": loss_cls(),
-                "config": model_config,
-                "num_samples": config.tuning.num_samples,
-                "cpus": config.tuning.cpus,
-                "gpus": config.tuning.gpus,
-                "verbose": False,
-                "backend": config.tuning.backend,
-                "scheduler_cls": scheduler_cls,
-                "scheduler_kwargs": scheduler_kwargs,
-                "tune_metric": tune_metric,
-                "tune_mode": tune_mode,
-            }
-            if search_alg is not None:
-                model_kwargs["search_alg"] = search_alg
-
-            models.append(model_cls(**model_kwargs))
+        models = [
+            _build_model(name, config, loss_cls, scheduler_cls, scheduler_kwargs)
+            for name in config.models
+        ]
 
         if not models:
             raise ValueError("No models selected.")

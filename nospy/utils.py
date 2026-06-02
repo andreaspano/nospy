@@ -53,16 +53,12 @@ def setup_environment(cuda_visible_devices: str | None = "0") -> None:
 
 
 def make_output_paths(out_dir: Path) -> dict[str, Path]:
-    # Use full timestamp including seconds
     tag = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     run_dir = out_dir / tag
-    run_dir.mkdir(parents=True, exist_ok=True)
 
     return {
         "cv": run_dir / "cv.csv",
         "metrics": run_dir / "metrics.csv",
         "ranking": run_dir / "ranking.csv",
-        "forecast_vs_actuals": run_dir / "forecast_vs_actuals.png",
-        "scatter_forecast_vs_actuals": run_dir / "scatter_forecast_vs_actuals.png",
         "run_dir": run_dir,
     }

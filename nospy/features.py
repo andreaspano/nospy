@@ -1,18 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
-
-
-
-# ============================================================
-# FeaturesCalculator class for time series feature extraction
-# ============================================================
-
-import warnings
-warnings.filterwarnings("ignore")
-
-
 from tsfeatures import (
     acf_features,
     pacf_features,
@@ -36,77 +24,26 @@ import pycatch22
 
 
 # ============================================================
-# Feature groups
+# FeaturesCalculator — future extension point for feature extraction
 # ============================================================
 
 
 class FeaturesCalculator:
-    FEATURE_GROUPS = {
-        "metadata": [
-            "n_obs",
-            "freq",
-        ],
-        "trend_seasonality": [
-            "trend",
-            "seasonal_strength",
-            "spike",
-            "linearity",
-            "curvature",
-            "peak",
-            "trough",
-        ],
-        "autocorrelation": [
-            "x_acf1",
-            "x_acf10",
-            "diff1_acf1",
-            "diff1_acf10",
-            "diff2_acf1",
-            "diff2_acf10",
-            "x_pacf5",
-        ],
-        "forecastability": [
-            "entropy",
-            "hurst",
-            "nonlinearity",
-        ],
-        "stability": [
-            "lumpiness",
-            "stability",
-            "heterogeneity",
-        ],
-        "stationarity": [
-            "unitroot_kpss",
-            "unitroot_pp",
-        ],
-        "sparsity": [
-            "sparsity",
-            "zero_proportion",
-            "flat_spots",
-            "crossing_points",
-        ],
-        "model_shape": [
-            "holt_alpha",
-            "holt_beta",
-            "hw_alpha",
-            "hw_beta",
-            "hw_gamma",
-        ],
-        "catch22": "all",
-    }
-
-    def __init__(self, df, use_views=True, min_length=20):
+    def __init__(self, df: pd.DataFrame, use_views: bool = True, min_length: int = 20) -> None:
         self.df = df
         self.use_views = use_views
         self.min_length = min_length
 
     def compute_features(self):
-        return build_feature_dataframe(self.df, use_views=self.use_views, min_length=self.min_length)
-
+        return build_feature_dataframe(
+            self.df, use_views=self.use_views, min_length=self.min_length
+        )
 
 
 # ============================================================
 # Frequency inference
 # ============================================================
+
 
 def infer_seasonal_frequency(ds: pd.Series) -> int:
     """
@@ -155,21 +92,20 @@ def infer_seasonal_frequency(ds: pd.Series) -> int:
 # Utility functions
 # ============================================================
 
+
 def clean_series(y: pd.Series) -> np.ndarray:
     """
     Convert series to clean numeric numpy array.
     """
 
-    y = (
-        pd.to_numeric(y, errors="coerce")
-        .replace([np.inf, -np.inf], np.nan)
-        .dropna()
-    )
+    y = pd.to_numeric(y, errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
 
     return y.to_numpy(dtype=float)
 
 
-def safe_update(features: dict, func, y: np.ndarray, freq: int, prefix: str | None = None) -> dict:
+def safe_update(
+    features: dict, func, y: np.ndarray, freq: int, prefix: str | None = None
+) -> dict:
     """
     Safely call a tsfeatures function and update feature dictionary.
     """
@@ -212,12 +148,29 @@ def safe_catch22(y: np.ndarray, prefix: str = "catch22") -> dict:
 # Single-view feature extraction
 # ============================================================
 
+
+def _apply_group(
+    features: dict,
+    funcs: list,
+    y: np.ndarray,
+    freq: int,
+    prefix: str | None,
+) -> None:
+    """Apply a list of tsfeatures functions and merge results into features."""
+    temp: dict = {}
+    for fn in funcs:
+        temp = safe_update(temp, fn, y, freq)
+    add = (lambda k: f"{prefix}_{k}") if prefix else (lambda k: k)
+    features.update({add(k): v for k, v in temp.items()})
+
+
 def compute_single_view_features(
     y: np.ndarray,
     freq: int,
     prefix: str | None = None,
     min_length: int = 20,
     include_catch22: bool = True,
+    include_model_shape: bool = True,
 ) -> dict:
     """
     Compute all feature groups for a single numeric time series.
@@ -228,6 +181,9 @@ def compute_single_view_features(
         prefix: optional prefix for feature names
         min_length: minimum required observations
         include_catch22: whether to compute catch22
+        include_model_shape: whether to compute holt/hw exponential-smoothing
+            parameters. Expensive (~180ms/call). Only meaningful on level
+            (price) series; disable for returns/volatility views.
 
     Returns:
         dict of features
@@ -241,82 +197,38 @@ def compute_single_view_features(
     def add_name(name: str) -> str:
         return f"{prefix}_{name}" if prefix else name
 
-    # -----------------------------
-    # Trend / Seasonality
-    # -----------------------------
+    _apply_group(features, [stl_features], y, freq, prefix)
+    _apply_group(features, [acf_features, pacf_features], y, freq, prefix)
+    _apply_group(features, [entropy, hurst, nonlinearity], y, freq, prefix)
+    _apply_group(features, [lumpiness, stability, heterogeneity], y, freq, prefix)
+    _apply_group(features, [unitroot_kpss, unitroot_pp], y, freq, prefix)
 
-    temp = {}
-    temp = safe_update(temp, stl_features, y, freq)
-    features.update({add_name(k): v for k, v in temp.items()})
-
-    # -----------------------------
-    # Autocorrelation
-    # -----------------------------
-
-    temp = {}
-    temp = safe_update(temp, acf_features, y, freq)
-    temp = safe_update(temp, pacf_features, y, freq)
-    features.update({add_name(k): v for k, v in temp.items()})
-
-    # -----------------------------
-    # Forecastability
-    # -----------------------------
-
-    temp = {}
-    temp = safe_update(temp, entropy, y, freq)
-    temp = safe_update(temp, hurst, y, freq)
-    temp = safe_update(temp, nonlinearity, y, freq)
-    features.update({add_name(k): v for k, v in temp.items()})
-
-    # -----------------------------
-    # Stability
-    # -----------------------------
-
-    temp = {}
-    temp = safe_update(temp, lumpiness, y, freq)
-    temp = safe_update(temp, stability, y, freq)
-    temp = safe_update(temp, heterogeneity, y, freq)
-    features.update({add_name(k): v for k, v in temp.items()})
-
-    # -----------------------------
-    # Stationarity
-    # -----------------------------
-
-    temp = {}
-    temp = safe_update(temp, unitroot_kpss, y, freq)
-    temp = safe_update(temp, unitroot_pp, y, freq)
-    features.update({add_name(k): v for k, v in temp.items()})
-
-    # -----------------------------
-    # Sparsity
-    # -----------------------------
-
-    temp = {}
+    # Sparsity — includes a manual zero_proportion scalar
+    temp: dict = {}
     temp = safe_update(temp, sparsity, y, freq)
     temp = safe_update(temp, flat_spots, y, freq)
     temp = safe_update(temp, crossing_points, y, freq)
-
     temp["zero_proportion"] = float(np.mean(y == 0))
-
     features.update({add_name(k): v for k, v in temp.items()})
 
     # -----------------------------
-    # Model shape
+    # Model shape  (level view only — ~180ms/call, degenerate on returns/vol)
     # -----------------------------
 
-    try:
-        holt = holt_parameters(y, freq=freq)
-        for k, v in holt.items():
-            features[add_name(f"holt_{k}")] = v
-    except Exception:
-        pass
+    if include_model_shape:
+        try:
+            holt = holt_parameters(y, freq=freq)
+            for k, v in holt.items():
+                features[add_name(f"holt_{k}")] = v
+        except Exception:
+            pass
 
-    try:
-        hw = hw_parameters(y, freq=freq)
-        for k, v in hw.items():
-            features[add_name(f"hw_{k}")] = v
-    except Exception:
-        pass
+        try:
+            hw = hw_parameters(y, freq=freq)
+            for k, v in hw.items():
+                features[add_name(f"hw_{k}")] = v
+        except Exception:
+            pass
 
     # -----------------------------
     # catch22
@@ -332,6 +244,7 @@ def compute_single_view_features(
 # ============================================================
 # Multi-view feature extraction
 # ============================================================
+
 
 def compute_features_for_group(
     group: pd.DataFrame,
@@ -373,6 +286,7 @@ def compute_features_for_group(
             prefix="level",
             min_length=min_length,
             include_catch22=True,
+            include_model_shape=True,
         )
 
         features.update(level_features)
@@ -395,6 +309,7 @@ def compute_features_for_group(
             prefix="return",
             min_length=min_length,
             include_catch22=True,
+            include_model_shape=False,
         )
 
         features.update(return_features)
@@ -412,6 +327,7 @@ def compute_features_for_group(
             prefix="volatility",
             min_length=min_length,
             include_catch22=True,
+            include_model_shape=False,
         )
 
         features.update(volatility_features)
@@ -458,8 +374,7 @@ def build_feature_dataframe(
     data = data.sort_values(["unique_id", "ds"])
 
     features_df = (
-        data
-        .groupby("unique_id", group_keys=False)
+        data.groupby("unique_id", group_keys=False)
         .apply(
             lambda g: compute_features_for_group(
                 g,
@@ -472,91 +387,9 @@ def build_feature_dataframe(
 
     # Replace infinite values
     numeric_cols = features_df.select_dtypes(include=[np.number]).columns
-    features_df[numeric_cols] = (
-        features_df[numeric_cols]
-        .replace([np.inf, -np.inf], np.nan)
+    features_df[numeric_cols] = features_df[numeric_cols].replace(
+        [np.inf, -np.inf], np.nan
     )
 
     return features_df
-
-
-# ============================================================
-# Optional: compact LLM profile
-# ============================================================
-
-def build_llm_profile(features_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build compact interpretable feature set for the LLM.
-
-    This avoids passing hundreds of raw features to the LLM.
-    """
-
-    preferred_cols = [
-        "unique_id",
-        "n_obs",
-        "freq",
-
-        # level
-        "level_trend",
-        "level_seasonal_strength",
-        "level_spike",
-        "level_linearity",
-        "level_curvature",
-        "level_x_acf1",
-        "level_x_acf10",
-        "level_x_pacf5",
-        "level_entropy",
-        "level_hurst",
-        "level_nonlinearity",
-        "level_lumpiness",
-        "level_stability",
-        "level_heterogeneity",
-        "level_unitroot_kpss",
-        "level_unitroot_pp",
-
-        # returns
-        "return_x_acf1",
-        "return_x_acf10",
-        "return_x_pacf5",
-        "return_entropy",
-        "return_hurst",
-        "return_nonlinearity",
-        "return_lumpiness",
-        "return_stability",
-        "return_heterogeneity",
-        "return_unitroot_kpss",
-        "return_unitroot_pp",
-
-        # volatility
-        "volatility_x_acf1",
-        "volatility_x_acf10",
-        "volatility_x_pacf5",
-        "volatility_entropy",
-        "volatility_hurst",
-        "volatility_nonlinearity",
-        "volatility_lumpiness",
-        "volatility_stability",
-        "volatility_heterogeneity",
-    ]
-
-    existing_cols = [
-        col for col in preferred_cols
-        if col in features_df.columns
-    ]
-
-    return features_df[existing_cols].copy()
-
-
-
-# ============================================================
-# Usage example (uncomment and adapt for standalone testing)
-# ============================================================
-# if __name__ == "__main__":
-#     # df must have: unique_id | ds | y
-#     features_df = build_feature_dataframe(
-#         df=ts,
-#         use_views=True,
-#         min_length=20,
-#     )
-#     llm_profile_df = build_llm_profile(features_df)
 
