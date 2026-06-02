@@ -26,3 +26,6 @@ yfinance==1.3.0
 
 # Config
 PyYAML==6.0.3
+
+# LLM client (GitHub Copilot API)
+openai>=1.30.0

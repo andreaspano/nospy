@@ -1,24 +1,61 @@
 {
   "fixed": {
-    "stack_types": ["identity"]
+    "stack_types": [
+      "trend",
+      "seasonality"
+    ]
   },
   "run": {
-    "input_size": [20, 40, 60],
-    "max_steps": [300, 500],
-    "learning_rate": [0.001, 0.0005],
-    "batch_size": [256, 512],
-    "windows_batch_size": [512, 1024],
-    "scaler_type": ["robust", "standard"],
-    "random_seed": [42, 123]
+    "input_size": [
+      256,
+      512,
+      768,
+      1024
+    ],
+    "max_steps": [
+      1000,
+      2000,
+      3000,
+      4000
+    ],
+    "learning_rate": [
+      0.001,
+      0.0005,
+      0.0003,
+      0.0001
+    ],
+    "batch_size": [
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "windows_batch_size": [
+      2048,
+      4096,
+      8192,
+      16384
+    ],
+    "scaler_type": [
+      "robust",
+      "standard",
+      "identity",
+      "minmax"
+    ],
+    "random_seed": [
+      42,
+      123,
+      2023,
+      2024
+    ]
   },
   "test": {
-    "input_size": 1,
+    "input_size": 10,
     "max_steps": 1,
-    "learning_rate": 0.01,
-    "batch_size": 128,
-    "windows_batch_size": 128,
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "windows_batch_size": 64,
     "scaler_type": "standard",
-    "random_seed": 42,
-    "stack_types": ["identity"]
+    "random_seed": 42
   }
 }

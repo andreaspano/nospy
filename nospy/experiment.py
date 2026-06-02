@@ -1,14 +1,17 @@
+import json
+
 import pandas as pd
 from neuralforecast import NeuralForecast
 
 from nospy.config import ExperimentConfig
 from nospy.plot import save_plots
-from nospy.features import build_feature_dataframe
+from nospy.features import FeaturesCalculator
 
 from nospy.data import download_prices, prepare_timeseries
 from nospy.evaluation import Evaluator
 from nospy.models import ModelFactory
-from nospy.utils import make_output_paths, setup_environment
+from nospy.prompt import generate_model_json
+from nospy.utils import make_output_paths, setup_environment, silence
 from nospy.reconcile import reconcile
 
 
@@ -130,9 +133,28 @@ class ForecastExperiment:
         self.load_data()
         self.prepare_data()
 
-        self.features_df = build_feature_dataframe(self.ts)
+        run_dir = self.output_paths["run_dir"]
+        run_dir.mkdir(parents=True, exist_ok=True)
 
-        self.run_cross_validation()
+        # Build feature summary and regenerate model configs via Copilot
+        calc = FeaturesCalculator(self.ts)
+        self.features_df = calc.compute_features()
+        summary = calc.summarize()
+        (run_dir / "features_summary.json").write_text(
+            json.dumps(summary, indent=2)
+        )
+        for model_name in self.config.models:
+            generate_model_json(
+                calc,
+                model_name=model_name,
+                h=self.config.cv.h,
+                config=self.config,
+                out_dir=run_dir,
+            )
+            print(f"Model config updated: json/{model_name.lower().replace('auto', '')}.json")
+
+        with silence():
+            self.run_cross_validation()
         self.reconcile_forecasts()
         self.evaluate()
         self.save_results()

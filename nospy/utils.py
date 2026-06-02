@@ -1,5 +1,7 @@
+import logging
 import os
 import warnings
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -42,6 +44,22 @@ def setup_environment(cuda_visible_devices: str | None = "0") -> None:
     warnings.filterwarnings("ignore")
     torch.set_float32_matmul_precision("high")
 
+    # Suppress verbose output from PyTorch Lightning, Ray, and NeuralForecast
+    for logger_name in (
+        "pytorch_lightning",
+        "lightning",
+        "lightning.pytorch",
+        "ray",
+        "ray.tune",
+        "ray.air",
+    ):
+        logging.getLogger(logger_name).setLevel(logging.ERROR)
+
+    os.environ.setdefault("TUNE_DISABLE_AUTO_CALLBACK_LOGGERS", "1")
+    os.environ.setdefault("RAY_AIR_NEW_OUTPUT", "0")
+    os.environ.setdefault("TQDM_DISABLE", "1")
+    os.environ.setdefault("RAY_LOG_TO_DRIVER", "0")
+
     if cuda_visible_devices is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
 
@@ -62,3 +80,21 @@ def make_output_paths(out_dir: Path) -> dict[str, Path]:
         "ranking": run_dir / "ranking.csv",
         "run_dir": run_dir,
     }
+
+
+@contextmanager
+def silence():
+    """Redirect stdout and stderr file descriptors to /dev/null."""
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    saved_stdout = os.dup(1)
+    saved_stderr = os.dup(2)
+    try:
+        os.dup2(devnull_fd, 1)
+        os.dup2(devnull_fd, 2)
+        yield
+    finally:
+        os.dup2(saved_stdout, 1)
+        os.dup2(saved_stderr, 2)
+        os.close(saved_stdout)
+        os.close(saved_stderr)
+        os.close(devnull_fd)

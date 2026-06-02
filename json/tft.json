@@ -1,20 +1,60 @@
 {
   "fixed": {},
   "run": {
-    "input_size": [20, 40],
-    "max_steps": [300, 500],
-    "learning_rate": [0.001, 0.0005],
-    "batch_size": [128, 256],
-    "windows_batch_size": [256, 512],
-    "scaler_type": ["robust", "standard"],
-    "random_seed": [42, 123]
+    "input_size": [
+      256,
+      384,
+      512,
+      640,
+      768
+    ],
+    "max_steps": [
+      1000,
+      2000,
+      3000,
+      5000
+    ],
+    "learning_rate": [
+      0.001,
+      0.0005,
+      0.0003,
+      0.0001,
+      5e-05
+    ],
+    "batch_size": [
+      512,
+      1024,
+      2048,
+      4096,
+      8192
+    ],
+    "windows_batch_size": [
+      4096,
+      8192,
+      16384,
+      32768,
+      65536
+    ],
+    "scaler_type": [
+      "robust",
+      "standard",
+      "minmax",
+      "identity"
+    ],
+    "random_seed": [
+      42,
+      123,
+      2023,
+      2024,
+      2025
+    ]
   },
   "test": {
-    "input_size": 1,
+    "input_size": 10,
     "max_steps": 1,
-    "learning_rate": 0.01,
-    "batch_size": 128,
-    "windows_batch_size": 128,
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "windows_batch_size": 64,
     "scaler_type": "standard",
     "random_seed": 42
   }

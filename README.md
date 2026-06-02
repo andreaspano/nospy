@@ -2,6 +2,13 @@
 
 A small Python module for downloading financial time series data, running NeuralForecast models, cross-validating them, and comparing model performance.
 
+# Tmux
+tmux new -s forecast
+Ctrl+b d to detach 
+tmux attach -t forecast 
+use tailscale for remote connection 
+
+
 ## Project structure
 
 ```text

@@ -33,10 +33,37 @@ class FeaturesCalculator:
         self.df = df
         self.use_views = use_views
         self.min_length = min_length
+        self._features_df: pd.DataFrame | None = None
 
-    def compute_features(self):
-        return build_feature_dataframe(
+    def compute_features(self) -> pd.DataFrame:
+        self._features_df = build_feature_dataframe(
             self.df, use_views=self.use_views, min_length=self.min_length
+        )
+        return self._features_df
+
+    def summarize(self) -> dict:
+        """Return a compact, distributional summary of the computed features."""
+        if self._features_df is None:
+            self.compute_features()
+        return summarize_features(self._features_df)
+
+    def build_prompt(
+        self,
+        model_name: str,
+        h: int,
+        config=None,
+        existing_json: dict | None = None,
+    ) -> str:
+        """Build a GPT prompt for generating a model.json for *model_name*."""
+        from nospy.prompt import build_model_prompt
+
+        summary = self.summarize()
+        return build_model_prompt(
+            summary=summary,
+            model_name=model_name,
+            h=h,
+            config=config,
+            existing_json=existing_json,
         )
 
 
@@ -392,4 +419,180 @@ def build_feature_dataframe(
     )
 
     return features_df
+
+
+# ============================================================
+# Feature summarization
+# ============================================================
+
+
+def summarize_features(features_df: pd.DataFrame) -> dict:
+    """
+    Produce a distributional, coverage-aware summary of a features DataFrame.
+
+    Separates the synthetic ``TOTAL`` series from bottom-level series and
+    reports quantiles, coverage percentages, and threshold-based percentages
+    for every key metric group.  The resulting dict is JSON-serialisable and
+    is intended to be passed to an LLM to guide ``model.json`` configuration.
+
+    Args:
+        features_df: output of :func:`build_feature_dataframe`.
+
+    Returns:
+        Nested dict with sections ``dataset``, ``level``, ``returns``, and
+        ``volatility``.
+    """
+
+    df = features_df.copy()
+
+    if "unique_id" in df.columns:
+        total_mask = df["unique_id"] == "TOTAL"
+        df_bottom = df[~total_mask]
+        df_total = df[total_mask]
+    else:
+        df_bottom = df
+        df_total = pd.DataFrame()
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    def _qdesc(series: pd.Series) -> dict | None:
+        vals = series.dropna()
+        n_total = len(series)
+        if len(vals) == 0:
+            return None
+        return {
+            "count": int(len(vals)),
+            "coverage_pct": round(len(vals) / n_total * 100, 1),
+            "mean": round(float(vals.mean()), 4),
+            "std": round(float(vals.std()), 4),
+            "p25": round(float(vals.quantile(0.25)), 4),
+            "p50": round(float(vals.median()), 4),
+            "p75": round(float(vals.quantile(0.75)), 4),
+        }
+
+    def _pct_above(series: pd.Series, threshold: float) -> float | None:
+        vals = series.dropna()
+        if len(vals) == 0:
+            return None
+        return round(float((vals > threshold).mean()) * 100, 1)
+
+    def _col(prefix: str, name: str) -> str:
+        return f"{prefix}_{name}" if prefix else name
+
+    def _get(df_: pd.DataFrame, prefix: str, name: str) -> pd.Series:
+        col = _col(prefix, name)
+        return df_[col] if col in df_.columns else pd.Series(dtype=float)
+
+    def _stat(df_: pd.DataFrame, prefix: str, name: str) -> dict | None:
+        return _qdesc(_get(df_, prefix, name))
+
+    # ------------------------------------------------------------------
+    # Per-view summary
+    # ------------------------------------------------------------------
+
+    def _view_summary(df_: pd.DataFrame, prefix: str) -> dict:
+        v: dict = {}
+
+        # Trend / STL
+        s = _stat(df_, prefix, "trend")
+        if s:
+            v["trend_strength"] = s
+            v["pct_strong_trend"] = _pct_above(_get(df_, prefix, "trend"), 0.5)
+
+        s = _stat(df_, prefix, "seasonal_strength")
+        if s:
+            v["seasonal_strength"] = s
+            v["pct_seasonal"] = _pct_above(
+                _get(df_, prefix, "seasonal_strength"), 0.4
+            )
+
+        for key in ["linearity", "curvature", "e_acf1", "spike"]:
+            s = _stat(df_, prefix, key)
+            if s:
+                v[key] = s
+
+        # ACF / PACF
+        for key in ["x_acf1", "x_acf10", "diff1_acf1", "diff2_acf1", "seas_acf1"]:
+            s = _stat(df_, prefix, key)
+            if s:
+                v[key] = s
+
+        s = _stat(df_, prefix, "x_pacf5")
+        if s:
+            v["x_pacf5"] = s
+
+        # Noise / long memory
+        for key in ["entropy", "hurst"]:
+            s = _stat(df_, prefix, key)
+            if s:
+                v[key] = s
+
+        # Stationarity
+        for key in ["unitroot_kpss", "unitroot_pp"]:
+            s = _stat(df_, prefix, key)
+            if s:
+                v[key] = s
+
+        # Heterogeneity / ARCH
+        for key in ["arch_acf", "garch_acf", "arch_r2", "garch_r2"]:
+            s = _stat(df_, prefix, key)
+            if s:
+                v[key] = s
+
+        # Sparsity / structure
+        for key in [
+            "zero_proportion",
+            "sparsity",
+            "stability",
+            "lumpiness",
+            "flat_spots",
+            "crossing_points",
+            "nonlinearity",
+        ]:
+            s = _stat(df_, prefix, key)
+            if s:
+                v[key] = s
+
+        return v
+
+    # ------------------------------------------------------------------
+    # Dataset-level statistics
+    # ------------------------------------------------------------------
+
+    obs_series = df_bottom["n_obs"] if "n_obs" in df_bottom.columns else pd.Series(dtype=float)
+    pct_short: float | None = None
+    if len(obs_series.dropna()) > 0:
+        pct_short = round(float((obs_series < 20).mean()) * 100, 1)
+
+    freq_dist: dict | None = None
+    if "freq" in df_bottom.columns:
+        freq_dist = {
+            str(k): int(v)
+            for k, v in df_bottom["freq"].value_counts().to_dict().items()
+        }
+
+    dataset_section: dict = {
+        "n_series_total": len(df),
+        "n_bottom_series": len(df_bottom),
+        "has_total_series": len(df_total) > 0,
+        "obs_count": _qdesc(obs_series),
+        "pct_short_series": pct_short,
+        "frequency_distribution": freq_dist,
+    }
+
+    summary: dict = {
+        "dataset": dataset_section,
+        "level": _view_summary(df_bottom, "level"),
+        "returns": _view_summary(df_bottom, "return"),
+        "volatility": _view_summary(df_bottom, "volatility"),
+    }
+
+    # Drop empty view sections
+    for key in ("level", "returns", "volatility"):
+        if not summary[key]:
+            del summary[key]
+
+    return summary
 

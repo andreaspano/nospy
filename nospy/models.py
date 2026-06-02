@@ -2,6 +2,7 @@ import json
 import platform
 from pathlib import Path
 
+import ray
 from ray import tune, air
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.sample import Domain
@@ -10,8 +11,19 @@ from neuralforecast.auto import AutoNHITS, AutoNBEATS, AutoTFT
 from neuralforecast.losses.pytorch import MAE, MAPE
 
 from nospy.config import ExperimentConfig
+from nospy.utils import silence
 
 _MODEL_CONFIG_DIR = Path(__file__).resolve().parents[1] / "json"
+
+
+@ray.remote
+class _TrialCounter:
+    def __init__(self):
+        self._value = 0
+
+    def increment(self):
+        self._value += 1
+        return self._value
 
 
 class _AutoWithSchedulerMixin:
@@ -28,7 +40,29 @@ class _AutoWithSchedulerMixin:
         self._tune_mode = tune_mode
         self._scheduler_cls = scheduler_cls
         self._scheduler_kwargs = scheduler_kwargs or {}
+        self._trial_counter = None
+        self._trial_total: int = 0
         super().__init__(*args, **kwargs)
+
+    def _tty_print(self, msg: str) -> None:
+        """Print directly to the terminal, bypassing any fd redirects."""
+        try:
+            with open("/dev/tty", "w") as tty:
+                print(msg, file=tty, flush=True)
+        except OSError:
+            print(msg, flush=True)
+
+    def _train_tune(self, config_step, cls_model, dataset, val_size, test_size):
+        with silence():
+            super()._train_tune(config_step, cls_model, dataset, val_size, test_size)
+        if self._trial_counter is not None:
+            i = ray.get(self._trial_counter.increment.remote())
+            self._tty_print(f"  Running configuration {i}/{self._trial_total}")
+
+    def _fit_model(self, cls_model, config, dataset, val_size, test_size, distributed_config=None):
+        """Silence the main-process refit of the best model."""
+        with silence():
+            return super()._fit_model(cls_model, config, dataset, val_size, test_size, distributed_config)
 
     def _tune_model(
         self,
@@ -44,6 +78,10 @@ class _AutoWithSchedulerMixin:
         config,
         time_budget,
     ):
+        self._trial_counter = _TrialCounter.remote()
+        self._trial_total = num_samples
+        self._tty_print(f"Tuning {cls_model.__name__}: {num_samples} configurations")
+
         train_fn_with_parameters = tune.with_parameters(
             self._train_tune,
             cls_model=cls_model,
