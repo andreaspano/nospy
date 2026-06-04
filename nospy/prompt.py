@@ -34,8 +34,8 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "input_size": "int — number of past observations used as input",
             "max_steps": "int — number of gradient-descent training steps",
             "learning_rate": "float — Adam learning rate",
-            "batch_size": "int — number of time series sampled per training step",
-            "windows_batch_size": "int — number of windows sampled from each series",
+            "batch_size": "int — number of time series sampled per training step; candidates must be ≤256",
+            "windows_batch_size": "int — number of windows sampled from each series; candidates must be ≤1024",
             "n_pool_kernel_size": (
                 "List[int] with exactly 3 elements — "
                 "max-pooling kernel size per stack (outer list is the search space, "
@@ -71,8 +71,8 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "input_size": "int",
             "max_steps": "int",
             "learning_rate": "float",
-            "batch_size": "int",
-            "windows_batch_size": "int",
+            "batch_size": "int — candidates must be ≤256",
+            "windows_batch_size": "int — candidates must be ≤1024",
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
@@ -87,10 +87,12 @@ _MODEL_SCHEMAS: dict[str, dict] = {
         "description": "TFT — Temporal Fusion Transformer",
         "allowed_run_params": {
             "input_size": "int",
+            "hidden_size": "int — model hidden dimension; must be divisible by n_head (e.g. 64, 128, 256)",
+            "n_head": "int — number of attention heads; must divide hidden_size evenly (e.g. 4, 8)",
             "max_steps": "int",
             "learning_rate": "float",
-            "batch_size": "int",
-            "windows_batch_size": "int",
+            "batch_size": "int — keep ≤256; values above 256 cause crashes on typical datasets",
+            "windows_batch_size": "int — keep ≤1024; must not exceed total training windows (~10 × series_length)",
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
@@ -122,8 +124,10 @@ def _interpretation_hints(summary: dict) -> list[str]:
         )
     elif p50_obs and p50_obs > 500:
         hints.append(
-            "Series are long (median length > 500) — larger input_size and "
-            "windows_batch_size are feasible."
+            "Series are long (median length > 500) — larger input_size values "
+            "are feasible to capture long-range patterns. "
+            "Keep batch_size ≤256 and windows_batch_size ≤1024 regardless of "
+            "series length, to stay well within the total window count."
         )
 
     if p25_obs and p25_obs < 20:
@@ -247,6 +251,12 @@ def build_model_prompt(
         "- Use only the supported parameters listed below",
         "- Keep the correct shape for structured parameters "
         "(e.g. nested lists must preserve the documented dimensionality)",
+        "- **`batch_size` candidates must all be ≤256** — larger values cause "
+        "out-of-memory errors and training instability",
+        "- **`windows_batch_size` candidates must all be ≤1024** — the sampler "
+        "crashes if this exceeds the total number of windows in the dataset "
+        "(≈ n_series × (series_length − input_size − h)); 1024 is safe for "
+        "any dataset with ≥10 series of ≥200 observations",
         "- Return **only** valid JSON — no explanations, no markdown fences",
         "",
     ]

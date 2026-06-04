@@ -143,15 +143,16 @@ class ForecastExperiment:
         (run_dir / "features_summary.json").write_text(
             json.dumps(summary, indent=2)
         )
-        for model_name in self.config.models:
-            generate_model_json(
-                calc,
-                model_name=model_name,
-                h=self.config.cv.h,
-                config=self.config,
-                out_dir=run_dir,
-            )
-            print(f"Model config updated: json/{model_name.lower().replace('auto', '')}.json")
+        if not self.config.runtime.test:
+            for model_name in self.config.models:
+                generate_model_json(
+                    calc,
+                    model_name=model_name,
+                    h=self.config.cv.h,
+                    config=self.config,
+                    out_dir=run_dir,
+                )
+                print(f"Model config updated: json/{model_name.lower().replace('auto', '')}.json")
 
         with silence():
             self.run_cross_validation()
