@@ -10,13 +10,13 @@ data:
     - G.MI
     - AZM.MI
     - UNI.MI
-  start_date: "2020-01-01"
+  start_date: "2016-01-01"
   end_date: "2026-04-30"
   freq: "B"
 
 cv:
-  h: 5
-  n_windows: 12
+  h: 12
+  n_windows: 8
   step_size: 1
   refit: true
 
@@ -44,7 +44,7 @@ runtime:
   test: false
 
 evaluation:
-  metric: MAPE
+  metric: MAE
   reconciliation_method: wls_var
 
 

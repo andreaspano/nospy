@@ -7,7 +7,8 @@ tmux new -s forecast
 Ctrl+b d to detach 
 tmux attach -t forecast 
 use tailscale for remote connection 
-
+27312 sec
+7.5 ore
 
 ## Project structure
 

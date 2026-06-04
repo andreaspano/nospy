@@ -34,6 +34,7 @@ class _AutoWithSchedulerMixin:
         tune_mode: str = "min",
         scheduler_cls=None,
         scheduler_kwargs=None,
+        cv_total: int = 1,
         **kwargs,
     ):
         self._tune_metric = tune_metric
@@ -42,6 +43,8 @@ class _AutoWithSchedulerMixin:
         self._scheduler_kwargs = scheduler_kwargs or {}
         self._trial_counter = None
         self._trial_total: int = 0
+        self._cv_total: int = cv_total
+        self._cv_counter: int = 0
         super().__init__(*args, **kwargs)
 
     def _tty_print(self, msg: str) -> None:
@@ -78,6 +81,8 @@ class _AutoWithSchedulerMixin:
         config,
         time_budget,
     ):
+        self._cv_counter += 1
+        self._tty_print(f"Cross Validation {self._cv_counter}/{self._cv_total}")
         self._trial_counter = _TrialCounter.remote()
         self._trial_total = num_samples
         self._tty_print(f"Tuning {cls_model.__name__}: {num_samples} configurations")
@@ -215,6 +220,7 @@ def _build_model(
 
     tune_metric = config.tuning.tune_objective or "loss"
     tune_mode = config.tuning.mode or "min"
+    cv_total = config.cv.n_windows if config.cv.refit else 1
 
     kwargs = {
         "h": config.cv.h,
@@ -230,6 +236,7 @@ def _build_model(
         "scheduler_kwargs": scheduler_kwargs,
         "tune_metric": tune_metric,
         "tune_mode": tune_mode,
+        "cv_total": cv_total,
     }
     if search_alg is not None:
         kwargs["search_alg"] = search_alg
