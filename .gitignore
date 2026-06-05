@@ -28,3 +28,4 @@ lightning_logs/
 
 # keys
 .envrc
+.aider*
