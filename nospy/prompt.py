@@ -265,6 +265,13 @@ def build_model_prompt(
         "any dataset with ≥10 series of ≥200 observations",
         "- Return **only** valid JSON — no explanations, no markdown fences",
         "",
+        "**Search space size constraints:**",
+        "- The tuning budget is very limited (only 5 trials per model).",
+        "- Therefore, the `run` section must contain **at most 5 parameters** (choose the most impactful ones).",
+        "- For each parameter in `run`, provide **at most 3 candidate values**.",
+        "- This ensures the search space is small enough to be explored meaningfully with the limited budget.",
+        "- If you include more than 5 parameters or more than 3 values per parameter, the search will be essentially random and ineffective.",
+        "",
     ]
 
     # ------------------------------------------------------------- model schema
