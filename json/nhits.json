@@ -21,14 +21,13 @@
     "batch_size": [
       32,
       64,
-      128,
-      256
+      128
     ],
     "windows_batch_size": [
+      64,
       128,
       256,
-      512,
-      1024
+      512
     ],
     "n_pool_kernel_size": [
       [
@@ -72,12 +71,14 @@
     "dropout_prob_theta": [
       0.0,
       0.1,
-      0.2
+      0.2,
+      0.3
     ],
     "activation": [
       "ReLU",
       "LeakyReLU",
-      "SELU"
+      "SELU",
+      "Tanh"
     ],
     "mlp_units": [
       [
