@@ -223,6 +223,14 @@ def build_model_prompt(
     model_key = model_name.lower().replace("auto", "")
     schema = _MODEL_SCHEMAS.get(model_key)
 
+    # Determine tuning budget
+    num_samples = 5  # default
+    if config is not None:
+        if hasattr(config, "tuning"):
+            num_samples = config.tuning.num_samples
+        elif isinstance(config, dict):
+            num_samples = config.get("num_samples", 5)
+
     lines: list[str] = []
 
     # ------------------------------------------------------------------ header
@@ -266,7 +274,7 @@ def build_model_prompt(
         "- Return **only** valid JSON — no explanations, no markdown fences",
         "",
         "**Search space size constraints:**",
-        "- The tuning budget is very limited (only 5 trials per model).",
+        f"- The tuning budget is very limited (only {num_samples} trials per model).",
         "- Therefore, the `run` section must contain **at most 5 parameters** (choose the most impactful ones).",
         "- For each parameter in `run`, provide **at most 3 candidate values**.",
         "- This ensures the search space is small enough to be explored meaningfully with the limited budget.",
