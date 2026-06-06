@@ -23,6 +23,8 @@ import json
 import os
 from pathlib import Path
 
+from nospy.config import LLMConfig
+
 # ============================================================
 # Per-model schemas
 # ============================================================
