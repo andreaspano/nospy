@@ -6,7 +6,8 @@
     "input_size": [
       63,
       126,
-      252
+      252,
+      504
     ],
     "max_steps": [
       1000,
@@ -25,9 +26,10 @@
       128
     ],
     "windows_batch_size": [
+      16,
+      32,
       64,
-      128,
-      256
+      128
     ],
     "n_pool_kernel_size": [
       [
@@ -66,7 +68,8 @@
     "scaler_type": [
       "robust",
       "standard",
-      "minmax"
+      "minmax",
+      "identity"
     ],
     "dropout_prob_theta": [
       0.0,
@@ -147,6 +150,20 @@
       1
     ],
     "scaler_type": "standard",
-    "random_seed": 42
+    "random_seed": 42,
+    "dropout_prob_theta": 0.0,
+    "activation": "ReLU",
+    "mlp_units": [
+      [
+        16
+      ],
+      [
+        16
+      ],
+      [
+        16
+      ]
+    ],
+    "val_check_steps": 1
   }
 }

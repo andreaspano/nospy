@@ -37,7 +37,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "max_steps": "int — number of gradient-descent training steps",
             "learning_rate": "float — Adam learning rate",
             "batch_size": "int — number of time series sampled per training step; candidates must be ≤256",
-            "windows_batch_size": "int — number of windows sampled from each series; candidates must be ≤1024",
+            "windows_batch_size": "int — number of windows sampled from each series; candidates must be ≤256",
             "n_pool_kernel_size": (
                 "List[int] with exactly 3 elements — "
                 "max-pooling kernel size per stack (outer list is the search space, "
@@ -74,7 +74,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "max_steps": "int",
             "learning_rate": "float",
             "batch_size": "int — candidates must be ≤256",
-            "windows_batch_size": "int — candidates must be ≤1024",
+            "windows_batch_size": "int — candidates must be ≤256",
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
@@ -94,7 +94,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "max_steps": "int",
             "learning_rate": "float",
             "batch_size": "int — keep ≤256; values above 256 cause crashes on typical datasets",
-            "windows_batch_size": "int — keep ≤1024; must not exceed total training windows (~10 × series_length)",
+            "windows_batch_size": "int — keep ≤256; must not exceed total training windows (~10 × series_length)",
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
@@ -128,7 +128,7 @@ def _interpretation_hints(summary: dict) -> list[str]:
         hints.append(
             "Series are long (median length > 500) — larger input_size values "
             "are feasible to capture long-range patterns. "
-            "Keep batch_size ≤256 and windows_batch_size ≤1024 regardless of "
+            "Keep batch_size ≤256 and windows_batch_size ≤ regardless of "
             "series length, to stay well within the total window count."
         )
 
@@ -255,9 +255,9 @@ def build_model_prompt(
         "(e.g. nested lists must preserve the documented dimensionality)",
         "- **`batch_size` candidates must all be ≤256** — larger values cause "
         "out-of-memory errors and training instability",
-        "- **`windows_batch_size` candidates must all be ≤1024** — the sampler "
+        "- **`windows_batch_size` candidates must all be ≤256** — the sampler "
         "crashes if this exceeds the total number of windows in the dataset "
-        "(≈ n_series × (series_length − input_size − h)); 1024 is safe for "
+        "(≈ n_series × (series_length − input_size − h)); 256 is safe for "
         "any dataset with ≥10 series of ≥200 observations",
         "- Return **only** valid JSON — no explanations, no markdown fences",
         "",
