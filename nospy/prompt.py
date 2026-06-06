@@ -375,18 +375,58 @@ def _get_github_token() -> str:
     )
 
 
+def _call_copilot_api(prompt: str, model: str, temperature: float) -> str:
+    """Call GitHub Copilot API and return raw response text."""
+    from openai import OpenAI
+
+    token = _get_github_token()
+    client = OpenAI(base_url=_COPILOT_BASE_URL, api_key=token)
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+    )
+    return response.choices[0].message.content.strip()
+
+
+def _call_deepseek_api(prompt: str, model: str, temperature: float, api_key: str) -> str:
+    """Call DeepSeek API and return raw response text."""
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url="https://api.deepseek.com/v1",
+        api_key=api_key,
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+    )
+    return response.choices[0].message.content.strip()
+
+
+def _strip_markdown_fences(raw: str) -> str:
+    """Remove accidental markdown code fences from LLM output."""
+    if raw.startswith("```"):
+        raw = "\n".join(raw.splitlines()[1:])
+    if raw.endswith("```"):
+        raw = "\n".join(raw.splitlines()[:-1])
+    return raw
+
+
 def generate_model_json(
     calc,
     model_name: str,
     h: int,
     config=None,
-    copilot_model: str = "gpt-4o",
-    temperature: float = 0.2,
+    llm_config: "LLMConfig | None" = None,
     write: bool = True,
     out_dir: "Path | str | None" = None,
 ) -> dict:
     """
-    Call the GitHub Copilot API to generate / improve a ``model.json`` file.
+    Call an LLM API (Copilot or DeepSeek) to generate / improve a ``model.json`` file.
 
     Args:
         calc:          A :class:`~nospy.features.FeaturesCalculator` instance
@@ -396,8 +436,8 @@ def generate_model_json(
         h:             Forecast horizon.
         config:        Optional :class:`~nospy.config.ExperimentConfig` or
                        plain ``dict`` with ``num_samples`` / ``cpus`` / ``gpus``.
-        copilot_model: Copilot model ID to use (default ``"gpt-4o"``).
-        temperature:   Sampling temperature (default ``0.2`` for deterministic JSON).
+        llm_config:    Optional :class:`~nospy.config.LLMConfig` instance.
+                       If ``None``, defaults to Copilot with ``gpt-4o``.
         write:         If ``True`` (default), replace ``json/<model>.json`` with
                        the generated config.
         out_dir:       Optional run output directory.  When supplied, two files
@@ -408,7 +448,10 @@ def generate_model_json(
     Returns:
         Parsed ``dict`` with ``fixed``, ``run``, and ``test`` sections.
     """
-    from openai import OpenAI
+    from nospy.config import LLMConfig
+
+    if llm_config is None:
+        llm_config = LLMConfig()
 
     model_key = model_name.lower().replace("auto", "")
     json_path = _MODEL_CONFIG_DIR / f"{model_key}.json"
@@ -427,23 +470,28 @@ def generate_model_json(
         existing_json=existing_json,
     )
 
-    token = _get_github_token()
-    client = OpenAI(base_url=_COPILOT_BASE_URL, api_key=token)
+    if llm_config.provider == "deepseek":
+        api_key = llm_config.api_key or os.environ.get("DEEPSEEK_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "DeepSeek API key not found. Set DEEPSEEK_API_KEY environment variable "
+                "or pass api_key in LLMConfig."
+            )
+        raw = _call_deepseek_api(
+            prompt=prompt,
+            model=llm_config.model or "deepseek-chat",
+            temperature=llm_config.temperature,
+            api_key=api_key,
+        )
+    else:
+        # Default to Copilot
+        raw = _call_copilot_api(
+            prompt=prompt,
+            model=llm_config.model or "gpt-4o",
+            temperature=llm_config.temperature,
+        )
 
-    response = client.chat.completions.create(
-        model=copilot_model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=temperature,
-    )
-
-    raw = response.choices[0].message.content.strip()
-
-    # Strip accidental markdown fences
-    if raw.startswith("```"):
-        raw = "\n".join(raw.splitlines()[1:])
-    if raw.endswith("```"):
-        raw = "\n".join(raw.splitlines()[:-1])
-
+    raw = _strip_markdown_fences(raw)
     new_cfg = json.loads(raw)
 
     if write:

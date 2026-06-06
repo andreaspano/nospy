@@ -51,6 +51,15 @@ class EvaluationConfig:
 
 
 @dataclass
+class LLMConfig:
+    provider: str = "copilot"
+    model: str = "gpt-4o"
+    temperature: float = 0.2
+    api_key: str | None = None
+    base_url: str | None = None
+
+
+@dataclass
 class ExperimentConfig:
     data: DataConfig
     cv: CVConfig
@@ -58,9 +67,12 @@ class ExperimentConfig:
     tuning: TuningConfig
     runtime: RuntimeConfig
     evaluation: EvaluationConfig
+    llm: LLMConfig | None = None
 
     @classmethod
     def from_dict(cls, params: dict) -> "ExperimentConfig":
+        llm_params = params.get("llm")
+        llm_config = LLMConfig(**llm_params) if llm_params else None
         return cls(
             data=DataConfig(**params["data"]),
             cv=CVConfig(**params["cv"]),
@@ -68,4 +80,5 @@ class ExperimentConfig:
             tuning=TuningConfig(**params["tuning"]),
             runtime=RuntimeConfig(**params["runtime"]),
             evaluation=EvaluationConfig(**params["evaluation"]),
+            llm=llm_config,
         )

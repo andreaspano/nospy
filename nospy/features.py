@@ -53,6 +53,7 @@ class FeaturesCalculator:
         h: int,
         config=None,
         existing_json: dict | None = None,
+        llm_config=None,
     ) -> str:
         """Build a GPT prompt for generating a model.json for *model_name*."""
         from nospy.prompt import build_model_prompt
