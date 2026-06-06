@@ -61,8 +61,8 @@ class LLMConfig:
     provider: str
     model: str
     temperature: float
-    api_key: str | None
-    base_url: str | None
+    api_key: str | None = None
+    base_url: str | None = None
 
 
 @dataclass
