@@ -16,7 +16,7 @@ data:
 
 cv:
   h: 12
-  n_windows: 8
+  n_windows: 4
   step_size: 1
   refit: true
 
@@ -26,7 +26,7 @@ models:
   - AutoTFT
 
 tuning:
-  num_samples: 10
+  num_samples: 5
   cpus: 6
   gpus: 1
   backend: "ray"
@@ -34,9 +34,9 @@ tuning:
   scheduler: "asha"
   tune_objective: "loss"
   mode: "min"
-  asha_max_t: 50
-  asha_grace_period: 5
-  asha_reduction_factor: 3
+  asha_max_t: 25
+  asha_grace_period: 3
+  asha_reduction_factor: 2
 
 runtime:
   out_dir: "./out"

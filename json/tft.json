@@ -2,24 +2,22 @@
   "fixed": {},
   "run": {
     "input_size": [
+      48,
       96,
-      192,
-      288,
-      384
+      144,
+      192
     ],
     "hidden_size": [
+      64,
       128,
-      256,
-      512
+      256
     ],
     "n_head": [
-      4,
-      8
+      4
     ],
     "max_steps": [
       500,
-      1000,
-      2000
+      1000
     ],
     "learning_rate": [
       0.001,
@@ -29,12 +27,11 @@
     "batch_size": [
       16,
       32,
-      64,
-      128
+      64
     ],
     "windows_batch_size": [
-      128,
-      256
+      64,
+      128
     ],
     "scaler_type": [
       "robust",
