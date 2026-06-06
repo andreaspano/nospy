@@ -150,6 +150,7 @@ class ForecastExperiment:
                     model_name=model_name,
                     h=self.config.cv.h,
                     config=self.config,
+                    llm_config=self.config.llm,
                     out_dir=run_dir,
                 )
                 print(f"Model config updated: json/{model_name.lower().replace('auto', '')}.json")
