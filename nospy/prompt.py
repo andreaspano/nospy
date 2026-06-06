@@ -496,6 +496,29 @@ def generate_model_json(
     raw = _strip_markdown_fences(raw)
     new_cfg = json.loads(raw)
 
+    # Enforce batch_size and windows_batch_size limits from original JSON
+    if existing_json is not None:
+        for param in ("batch_size", "windows_batch_size"):
+            original_values = existing_json.get("run", {}).get(param, [])
+            if original_values:
+                max_original = max(original_values)
+                new_values = new_cfg.get("run", {}).get(param, [])
+                if new_values:
+                    # Clamp each candidate to not exceed max_original
+                    clamped = [min(v, max_original) for v in new_values]
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    unique_clamped = []
+                    for v in clamped:
+                        if v not in seen:
+                            seen.add(v)
+                            unique_clamped.append(v)
+                    new_cfg["run"][param] = unique_clamped
+                # Also clamp test value
+                test_val = new_cfg.get("test", {}).get(param)
+                if test_val is not None:
+                    new_cfg["test"][param] = min(test_val, max_original)
+
     if write:
         json_path.write_text(json.dumps(new_cfg, indent=2))
 
