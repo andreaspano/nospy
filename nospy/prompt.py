@@ -526,5 +526,6 @@ def generate_model_json(
         out = Path(out_dir)
         out.mkdir(parents=True, exist_ok=True)
         (out / f"{model_key}.json").write_text(json.dumps(new_cfg, indent=2))
+        (out / f"{model_key}_prompt.txt").write_text(prompt)
 
     return new_cfg
