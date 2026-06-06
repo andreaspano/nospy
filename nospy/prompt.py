@@ -505,6 +505,16 @@ def _clamp_vram_params(
 
         orig_values = orig_run[param]
 
+        # Skip non-numeric parameters (e.g., scaler_type, activation)
+        if isinstance(orig_values, list):
+            if orig_values and isinstance(orig_values[0], str):
+                continue
+            if orig_values and isinstance(orig_values[0], list):
+                if orig_values[0] and isinstance(orig_values[0][0], str):
+                    continue
+        elif isinstance(orig_values, str):
+            continue
+
         # Determine the maximum allowed value from the original JSON
         if isinstance(orig_values, list):
             # For structured parameters (nested lists), compute max across all elements
@@ -540,6 +550,10 @@ def _clamp_vram_params(
             continue
 
         orig_val = orig_test[param]
+
+        # Skip non-numeric parameters (e.g., scaler_type, activation)
+        if not isinstance(orig_val, (int, float)):
+            continue
 
         if isinstance(orig_val, list):
             max_allowed = max(orig_val)
