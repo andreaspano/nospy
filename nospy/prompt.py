@@ -19,6 +19,7 @@ Or build the prompt manually::
     # pass `prompt` to any LLM
 """
 
+import copy
 import json
 import os
 from pathlib import Path
@@ -420,6 +421,125 @@ def _strip_markdown_fences(raw: str) -> str:
     return raw
 
 
+def _clamp_vram_params(
+    original: dict | None,
+    new: dict,
+) -> dict:
+    """
+    Clamp VRAM‑sensitive hyperparameters in *new* to the maximum values
+    present in *original* (the current ``model.json``).
+
+    This prevents the LLM from proposing values that would exceed the
+    memory budget already established in the JSON files.
+
+    Parameters affected:
+        - scalar search spaces (e.g. ``input_size``, ``max_steps``)
+        - structured search spaces (e.g. ``mlp_units``, ``n_pool_kernel_size``)
+        - ``test`` section values
+
+    Returns a deep copy of *new* with clamped values.
+    """
+    if original is None:
+        return copy.deepcopy(new)
+
+    result = copy.deepcopy(new)
+
+    # ------------------------------------------------------------------
+    # Helper: clamp a list of candidate values to a given maximum
+    # ------------------------------------------------------------------
+    def _clamp_list(candidates: list, max_val: float) -> list:
+        clamped = [min(v, max_val) for v in candidates]
+        # Remove duplicates while preserving order
+        seen: set = set()
+        unique: list = []
+        for v in clamped:
+            if v not in seen:
+                seen.add(v)
+                unique.append(v)
+        return unique
+
+    # ------------------------------------------------------------------
+    # Helper: clamp every numeric element in a nested list structure
+    # ------------------------------------------------------------------
+    def _clamp_nested(value, max_val: float):
+        if isinstance(value, list):
+            return [_clamp_nested(v, max_val) for v in value]
+        if isinstance(value, (int, float)):
+            return min(value, max_val)
+        return value
+
+    # ------------------------------------------------------------------
+    # Helper: compute the maximum numeric value in a nested list
+    # ------------------------------------------------------------------
+    def _max_nested(value) -> float:
+        if isinstance(value, list):
+            return max(_max_nested(v) for v in value)
+        if isinstance(value, (int, float)):
+            return float(value)
+        return 0.0
+
+    # ------------------------------------------------------------------
+    # Process each parameter in the new JSON's ``run`` section
+    # ------------------------------------------------------------------
+    new_run = result.get("run", {})
+    orig_run = original.get("run", {})
+
+    for param, new_values in new_run.items():
+        if param not in orig_run:
+            continue  # unknown parameter – leave unchanged
+
+        orig_values = orig_run[param]
+
+        # Determine the maximum allowed value from the original JSON
+        if isinstance(orig_values, list):
+            # For structured parameters (nested lists), compute max across all elements
+            if orig_values and isinstance(orig_values[0], list):
+                max_allowed = _max_nested(orig_values)
+            else:
+                # Flat list of scalars
+                max_allowed = max(orig_values)
+        else:
+            # Scalar (shouldn't happen in ``run``, but be safe)
+            max_allowed = float(orig_values)
+
+        # Clamp the new values
+        if isinstance(new_values, list):
+            if new_values and isinstance(new_values[0], list):
+                # Structured parameter (e.g. mlp_units, n_pool_kernel_size)
+                new_run[param] = _clamp_nested(new_values, max_allowed)
+            else:
+                # Flat list of scalars
+                new_run[param] = _clamp_list(new_values, max_allowed)
+        else:
+            # Scalar (shouldn't happen in ``run``, but be safe)
+            new_run[param] = min(new_values, max_allowed)
+
+    # ------------------------------------------------------------------
+    # Process the ``test`` section similarly
+    # ------------------------------------------------------------------
+    new_test = result.get("test", {})
+    orig_test = original.get("test", {})
+
+    for param, new_val in new_test.items():
+        if param not in orig_test:
+            continue
+
+        orig_val = orig_test[param]
+
+        if isinstance(orig_val, list):
+            max_allowed = max(orig_val)
+        else:
+            max_allowed = float(orig_val)
+
+        if isinstance(new_val, list):
+            # Shouldn't happen in ``test``, but handle gracefully
+            new_test[param] = _clamp_list(new_val, max_allowed)
+        else:
+            new_test[param] = min(new_val, max_allowed)
+
+    return result
+
+
 def generate_model_json(
     calc,
     model_name: str,
@@ -498,28 +618,8 @@ def generate_model_json(
     raw = _strip_markdown_fences(raw)
     new_cfg = json.loads(raw)
 
-    # Enforce batch_size and windows_batch_size limits from original JSON
-    if existing_json is not None:
-        for param in ("batch_size", "windows_batch_size"):
-            original_values = existing_json.get("run", {}).get(param, [])
-            if original_values:
-                max_original = max(original_values)
-                new_values = new_cfg.get("run", {}).get(param, [])
-                if new_values:
-                    # Clamp each candidate to not exceed max_original
-                    clamped = [min(v, max_original) for v in new_values]
-                    # Remove duplicates while preserving order
-                    seen = set()
-                    unique_clamped = []
-                    for v in clamped:
-                        if v not in seen:
-                            seen.add(v)
-                            unique_clamped.append(v)
-                    new_cfg["run"][param] = unique_clamped
-                # Also clamp test value
-                test_val = new_cfg.get("test", {}).get(param)
-                if test_val is not None:
-                    new_cfg["test"][param] = min(test_val, max_original)
+    # Clamp all VRAM‑sensitive parameters to the original JSON's maximums
+    new_cfg = _clamp_vram_params(existing_json, new_cfg)
 
     if write:
         json_path.write_text(json.dumps(new_cfg, indent=2))
