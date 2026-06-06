@@ -524,6 +524,7 @@ def generate_model_json(
         # Also save the prompt text to JSON directory
         prompt_path = _MODEL_CONFIG_DIR / f"{model_key}_prompt.txt"
         prompt_path.write_text(prompt)
+        print(f"Prompt text saved to {prompt_path}")
 
     if out_dir is not None:
         out = Path(out_dir)
