@@ -19,6 +19,7 @@
       0.0001
     ],
     "batch_size": [
+      16,
       32,
       64,
       128
@@ -26,8 +27,7 @@
     "windows_batch_size": [
       64,
       128,
-      256,
-      512
+      256
     ],
     "n_pool_kernel_size": [
       [
