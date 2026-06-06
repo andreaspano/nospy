@@ -1,3 +1,7 @@
+"""
+Model construction and hyperparameter tuning.
+"""
+
 import json
 import platform
 from pathlib import Path

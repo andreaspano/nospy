@@ -1,3 +1,7 @@
+"""
+Data downloading and preparation utilities.
+"""
+
 import pandas as pd
 import yfinance as yf
 from concurrent.futures import ThreadPoolExecutor

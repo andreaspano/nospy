@@ -1,3 +1,7 @@
+"""
+Plotting utilities for forecast results.
+"""
+
 from pathlib import Path
 
 from plotnine import facet_wrap

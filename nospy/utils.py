@@ -1,3 +1,7 @@
+"""
+Utility functions for environment setup and file handling.
+"""
+
 import logging
 import os
 import warnings

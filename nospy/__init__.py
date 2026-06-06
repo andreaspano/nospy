@@ -1,3 +1,7 @@
+"""
+Nospy package.
+"""
+
 from nospy.config import ExperimentConfig
 from nospy.experiment import ForecastExperiment
 from nospy.features import FeaturesCalculator, summarize_features

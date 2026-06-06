@@ -1,3 +1,7 @@
+"""
+Evaluation metrics and ranking.
+"""
+
 import pandas as pd
 from neuralforecast.losses.numpy import mape
 

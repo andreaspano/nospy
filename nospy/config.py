@@ -1,3 +1,7 @@
+"""
+Configuration dataclasses for experiment parameters.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 

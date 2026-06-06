@@ -1,3 +1,7 @@
+"""
+Feature extraction and summarization for time series.
+"""
+
 import numpy as np
 import pandas as pd
 
