@@ -51,7 +51,7 @@ class Evaluator:
 
     @staticmethod
     def rank_models(
-        df_metrics: pd.DataFrame, metric_name: str = "MAPE"
+        df_metrics: pd.DataFrame, metric_name: str
     ) -> pd.DataFrame:
         df_metrics = df_metrics[df_metrics["unique_id"].notnull()]
         ranking = df_metrics.copy().sort_values(["unique_id", "cutoff", metric_name])

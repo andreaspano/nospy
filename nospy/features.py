@@ -47,6 +47,7 @@ class FeaturesCalculator:
             self.df,
             use_views=self.features_config.use_views,
             min_length=self.features_config.min_length,
+            features_config=self.features_config,
         )
         return self._features_df
 
@@ -215,6 +216,11 @@ def compute_single_view_features(
     if features_config is not None:
         include_catch22 = features_config.include_catch22
         include_model_shape = features_config.include_model_shape
+    # Note: features_config is passed when called from other functions,
+    # but the legacy defaults are kept for backward compatibility.
+    if features_config is not None:
+        include_catch22 = features_config.include_catch22
+        include_model_shape = features_config.include_model_shape
     """
     Compute all feature groups for a single numeric time series.
 
@@ -291,9 +297,9 @@ def compute_single_view_features(
 
 def compute_features_for_group(
     group: pd.DataFrame,
-    use_views: bool = True,
-    min_length: int = 20,
-    features_config: 'FeaturesConfig' = None,
+    use_views: bool,
+    min_length: int,
+    features_config: 'FeaturesConfig',
 ) -> pd.Series:
     """
     Compute features for one unique_id.
@@ -400,9 +406,9 @@ def compute_features_for_group(
 
 def build_feature_dataframe(
     df: pd.DataFrame,
-    use_views: bool = True,
-    min_length: int = 20,
-    features_config: 'FeaturesConfig' = None,
+    use_views: bool,
+    min_length: int,
+    features_config: 'FeaturesConfig',
 ) -> pd.DataFrame:
     """
     Build feature dataframe from long-format time series data.

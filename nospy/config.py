@@ -61,16 +61,16 @@ class LLMConfig:
     provider: str
     model: str
     temperature: float
-    api_key: str | None = None
-    base_url: str | None = None
+    api_key: str | None
+    base_url: str | None
 
 
 @dataclass
 class FeaturesConfig:
-    use_views: bool = True
-    min_length: int = 20
-    include_catch22: bool = True
-    include_model_shape: bool = True
+    use_views: bool
+    min_length: int
+    include_catch22: bool
+    include_model_shape: bool
 
 
 @dataclass
@@ -92,7 +92,12 @@ class ExperimentConfig:
                 llm_params = yaml.safe_load(f)
         else:
             llm_params = params.get("llm")
-        llm_config = LLMConfig(**llm_params) if llm_params else LLMConfig(provider="", model="", temperature=0.0)
+        if not llm_params:
+            raise ValueError(
+                "Missing LLM configuration. "
+                "Provide a valid 'yaml/llm.yaml' file."
+            )
+        llm_config = LLMConfig(**llm_params)
         features_params = params.get("features", {})
         return cls(
             data=DataConfig(**params["data"]),
