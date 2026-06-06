@@ -25,6 +25,7 @@ from tsfeatures import (
 )
 
 import pycatch22
+from nospy.config import FeaturesConfig
 
 
 # ============================================================
