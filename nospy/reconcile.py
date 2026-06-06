@@ -118,7 +118,7 @@ def _residual_variances(
 
 def reconcile(
     df_cv: pd.DataFrame,
-    method: str = "BottomUp",
+    method: str,
 ) -> pd.DataFrame:
     """
     Apply hierarchical forecast reconciliation to cross-validation results.

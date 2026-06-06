@@ -35,16 +35,17 @@ import pycatch22
 class FeaturesCalculator:
     """Encapsulates feature extraction and summarization for a collection of time series."""
 
-    def __init__(self, df: pd.DataFrame, use_views: bool = True, min_length: int = 20) -> None:
+    def __init__(self, df: pd.DataFrame, features_config: 'FeaturesConfig') -> None:
         self.df = df
-        self.use_views = use_views
-        self.min_length = min_length
+        self.features_config = features_config
         self._features_df: pd.DataFrame | None = None
 
     def compute_features(self) -> pd.DataFrame:
         """Compute feature DataFrame for all series in this calculator."""
         self._features_df = build_feature_dataframe(
-            self.df, use_views=self.use_views, min_length=self.min_length
+            self.df,
+            use_views=self.features_config.use_views,
+            min_length=self.features_config.min_length,
         )
         return self._features_df
 
@@ -206,7 +207,13 @@ def compute_single_view_features(
     min_length: int = 20,
     include_catch22: bool = True,
     include_model_shape: bool = True,
+    features_config: 'FeaturesConfig' = None,
 ) -> dict:
+    # Note: features_config is passed when called from other functions,
+    # but the legacy defaults are kept for backward compatibility.
+    if features_config is not None:
+        include_catch22 = features_config.include_catch22
+        include_model_shape = features_config.include_model_shape
     """
     Compute all feature groups for a single numeric time series.
 
@@ -285,6 +292,7 @@ def compute_features_for_group(
     group: pd.DataFrame,
     use_views: bool = True,
     min_length: int = 20,
+    features_config: 'FeaturesConfig' = None,
 ) -> pd.Series:
     """
     Compute features for one unique_id.
@@ -322,6 +330,7 @@ def compute_features_for_group(
             min_length=min_length,
             include_catch22=True,
             include_model_shape=True,
+            features_config=features_config,
         )
 
         features.update(level_features)
@@ -345,6 +354,7 @@ def compute_features_for_group(
             min_length=min_length,
             include_catch22=True,
             include_model_shape=False,
+            features_config=features_config,
         )
 
         features.update(return_features)
@@ -363,6 +373,7 @@ def compute_features_for_group(
             min_length=min_length,
             include_catch22=True,
             include_model_shape=False,
+            features_config=features_config,
         )
 
         features.update(volatility_features)
@@ -390,6 +401,7 @@ def build_feature_dataframe(
     df: pd.DataFrame,
     use_views: bool = True,
     min_length: int = 20,
+    features_config: 'FeaturesConfig' = None,
 ) -> pd.DataFrame:
     """
     Build feature dataframe from long-format time series data.
@@ -415,6 +427,7 @@ def build_feature_dataframe(
                 g,
                 use_views=use_views,
                 min_length=min_length,
+                features_config=features_config,
             )
         )
         .reset_index()

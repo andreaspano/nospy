@@ -423,7 +423,7 @@ def generate_model_json(
     model_name: str,
     h: int,
     config=None,
-    llm_config: "LLMConfig | None" = None,
+    llm_config: "LLMConfig" = None,
     write: bool = True,
     out_dir: "Path | str | None" = None,
 ) -> dict:
@@ -453,7 +453,7 @@ def generate_model_json(
     from nospy.config import LLMConfig
 
     if llm_config is None:
-        llm_config = LLMConfig()
+        raise ValueError("llm_config must be provided, not None")
 
     model_key = model_name.lower().replace("auto", "")
     json_path = _MODEL_CONFIG_DIR / f"{model_key}.json"

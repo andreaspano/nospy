@@ -53,16 +53,24 @@ class RuntimeConfig:
 @dataclass
 class EvaluationConfig:
     metric: str
-    reconciliation_method: str = "BottomUp"
+    reconciliation_method: str
 
 
 @dataclass
 class LLMConfig:
-    provider: str = "copilot"
-    model: str = "gpt-4o"
-    temperature: float = 0.2
+    provider: str
+    model: str
+    temperature: float
     api_key: str | None = None
     base_url: str | None = None
+
+
+@dataclass
+class FeaturesConfig:
+    use_views: bool = True
+    min_length: int = 20
+    include_catch22: bool = True
+    include_model_shape: bool = True
 
 
 @dataclass
@@ -73,18 +81,19 @@ class ExperimentConfig:
     tuning: TuningConfig
     runtime: RuntimeConfig
     evaluation: EvaluationConfig
-    llm: LLMConfig | None = None
+    features: FeaturesConfig
+    llm: LLMConfig
 
     @classmethod
     def from_dict(cls, params: dict) -> "ExperimentConfig":
-        # Always load from the single llm.yaml file, overriding any llm in params
         llm_path = Path(__file__).resolve().parents[1] / "yaml" / "llm.yaml"
         if llm_path.exists():
             with open(llm_path, "r") as f:
                 llm_params = yaml.safe_load(f)
         else:
             llm_params = params.get("llm")
-        llm_config = LLMConfig(**llm_params) if llm_params else None
+        llm_config = LLMConfig(**llm_params) if llm_params else LLMConfig(provider="", model="", temperature=0.0)
+        features_params = params.get("features", {})
         return cls(
             data=DataConfig(**params["data"]),
             cv=CVConfig(**params["cv"]),
@@ -92,5 +101,6 @@ class ExperimentConfig:
             tuning=TuningConfig(**params["tuning"]),
             runtime=RuntimeConfig(**params["runtime"]),
             evaluation=EvaluationConfig(**params["evaluation"]),
+            features=FeaturesConfig(**features_params),
             llm=llm_config,
         )

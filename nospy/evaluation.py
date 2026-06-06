@@ -18,7 +18,7 @@ class Evaluator:
         return [col for col in df_cv.columns if col not in Evaluator.ID_COLUMNS]
 
     @staticmethod
-    def compute_metrics(df_cv: pd.DataFrame, metric_name: str = "MAPE") -> pd.DataFrame:
+    def compute_metrics(df_cv: pd.DataFrame, metric_name: str) -> pd.DataFrame:
         model_cols = Evaluator.get_model_columns(df_cv)
 
         if not model_cols:
