@@ -58,6 +58,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             ),
             "val_check_steps": "int — validate every N training steps",
         },
+        "allowed_fixed_params": {},
         "structured_examples": {
             "n_pool_kernel_size": [[1, 1, 1], [2, 2, 1], [4, 2, 1]],
             "n_freq_downsample": [[1, 1, 1], [2, 2, 1], [4, 2, 1]],
@@ -78,7 +79,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
-        "fixed_only_params": {
+        "allowed_fixed_params": {
             "stack_types": (
                 'List[str] — e.g. ["identity"] or ["trend", "seasonality"]. '
                 "Put this in \"fixed\", NOT in \"run\"."
@@ -98,6 +99,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
+        "allowed_fixed_params": {},
     },
 }
 
@@ -245,6 +247,7 @@ def build_model_prompt(
         "```",
         "",
         "**Hard rules:**",
+        "- `fixed` values are scalars (not arrays) — they are applied directly, never tuned",
         "- `run` values **must** be JSON arrays (they are passed to `tune.choice([...])`)",
         "- Every `run` parameter must have at least 2 candidate values",
         "- `test` values must be scalars (not arrays)",
@@ -267,17 +270,16 @@ def build_model_prompt(
     if schema:
         lines += [f"## Model: {schema['description']}", ""]
 
-        lines.append("### Supported `run` parameters")
+        lines.append("### Supported `run` parameters (tuned)")
         for param, desc in schema["allowed_run_params"].items():
             lines.append(f"- `{param}`: {desc}")
         lines.append("")
 
-        if "fixed_only_params" in schema:
+        if schema.get("allowed_fixed_params"):
             lines.append(
-                "### Parameters that belong in `fixed` only "
-                "(do **not** place in `run`)"
+                "### Supported `fixed` parameters (not tuned)"
             )
-            for param, desc in schema["fixed_only_params"].items():
+            for param, desc in schema["allowed_fixed_params"].items():
                 lines.append(f"- `{param}`: {desc}")
             lines.append("")
 
