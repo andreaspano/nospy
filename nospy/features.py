@@ -29,6 +29,8 @@ import pycatch22
 
 
 class FeaturesCalculator:
+    """Encapsulates feature extraction and summarization for a collection of time series."""
+
     def __init__(self, df: pd.DataFrame, use_views: bool = True, min_length: int = 20) -> None:
         self.df = df
         self.use_views = use_views
@@ -36,6 +38,7 @@ class FeaturesCalculator:
         self._features_df: pd.DataFrame | None = None
 
     def compute_features(self) -> pd.DataFrame:
+        """Compute feature DataFrame for all series in this calculator."""
         self._features_df = build_feature_dataframe(
             self.df, use_views=self.use_views, min_length=self.min_length
         )
