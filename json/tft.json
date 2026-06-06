@@ -34,9 +34,7 @@
     ],
     "windows_batch_size": [
       128,
-      256,
-      512,
-      1024
+      256
     ],
     "scaler_type": [
       "robust",

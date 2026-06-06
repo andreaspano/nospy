@@ -95,7 +95,7 @@ _MODEL_SCHEMAS: dict[str, dict] = {
             "max_steps": "int",
             "learning_rate": "float",
             "batch_size": "int — keep ≤256; values above 256 cause crashes on typical datasets",
-            "windows_batch_size": "int — keep ≤256; must not exceed total training windows (~10 × series_length)",
+            "windows_batch_size": "int — keep ≤256; values >256 are memory‑hungry and may cause OOM on typical datasets; must not exceed total training windows (~10 × series_length)",
             "scaler_type": 'str — one of "robust", "standard", "identity", "minmax"',
             "random_seed": "int",
         },
