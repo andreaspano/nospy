@@ -141,7 +141,7 @@ class ForecastExperiment:
         run_dir.mkdir(parents=True, exist_ok=True)
 
         # Build feature summary and regenerate model configs via Copilot
-        calc = FeaturesCalculator(self.ts)
+        calc = FeaturesCalculator(self.ts, features_config=self.config.features)
         self.features_df = calc.compute_features()
         summary = calc.summarize()
         (run_dir / "features_summary.json").write_text(
