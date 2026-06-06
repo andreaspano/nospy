@@ -521,6 +521,9 @@ def generate_model_json(
 
     if write:
         json_path.write_text(json.dumps(new_cfg, indent=2))
+        # Also save the prompt text to JSON directory
+        prompt_path = _MODEL_CONFIG_DIR / f"{model_key}_prompt.txt"
+        prompt_path.write_text(prompt)
 
     if out_dir is not None:
         out = Path(out_dir)
