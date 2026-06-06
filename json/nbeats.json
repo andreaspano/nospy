@@ -3,12 +3,12 @@
     "stack_types": [
       "trend",
       "seasonality"
-    ]
+    ],
+    "scaler_type": "standard",
+    "random_seed": 42
   },
   "run": {
     "input_size": [
-      128,
-      256,
       384,
       512
     ],
@@ -20,30 +20,14 @@
     "learning_rate": [
       0.001,
       0.0005,
-      0.00025,
       0.0001
     ],
     "batch_size": [
-      16,
       32,
       64
     ],
     "windows_batch_size": [
-      16,
-      32,
       64
-    ],
-    "scaler_type": [
-      "robust",
-      "standard",
-      "identity",
-      "minmax"
-    ],
-    "random_seed": [
-      42,
-      123,
-      2023,
-      2024
     ]
   },
   "test": {
