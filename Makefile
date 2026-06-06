@@ -12,7 +12,7 @@ venv:
 
 
 run:
-	direnv exec . env PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/run.yaml
+	direnv exec . env PYTHONPATH=$(shell pwd) PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $(PYTHON) main.py --config yaml/run.yaml
 
 sync:
 	rsync -avz andrea@mutolo:dev/nospy/out/ ~/dev/nospy/out/
