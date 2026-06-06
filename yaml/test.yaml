@@ -35,11 +35,6 @@ runtime:
   cuda_visible_devices: "0"
   test: true
 
-llm:
-  provider: copilot
-  model: gpt-4o
-  temperature: 0.2
-
 evaluation:
   metric: MAPE
   reconciliation_method: wls_var

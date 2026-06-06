@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import yaml
+
 
 @dataclass
 class DataConfig:
@@ -72,6 +74,12 @@ class ExperimentConfig:
     @classmethod
     def from_dict(cls, params: dict) -> "ExperimentConfig":
         llm_params = params.get("llm")
+        if llm_params is None:
+            # Load from the single llm.yaml file
+            llm_path = Path(__file__).resolve().parents[1] / "yaml" / "llm.yaml"
+            if llm_path.exists():
+                with open(llm_path, "r") as f:
+                    llm_params = yaml.safe_load(f)
         llm_config = LLMConfig(**llm_params) if llm_params else None
         return cls(
             data=DataConfig(**params["data"]),
