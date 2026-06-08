@@ -15,8 +15,8 @@ data:
   freq: "B"
 
 cv:
-  h: 12
-  n_windows: 4
+  h: 5
+  n_windows: 6
   step_size: 1
   refit: true
 
@@ -26,7 +26,7 @@ models:
   - AutoTFT
 
 tuning:
-  num_samples: 20
+  num_samples: 40
   cpus: 6
   gpus: 1
   backend: "ray"
