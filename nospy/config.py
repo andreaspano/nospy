@@ -57,14 +57,6 @@ class EvaluationConfig:
 
 
 @dataclass
-class FeaturesConfig:
-    use_views: bool
-    min_length: int
-    include_catch22: bool
-    include_model_shape: bool
-
-
-@dataclass
 class ExperimentConfig:
     data: DataConfig
     cv: CVConfig
@@ -72,11 +64,9 @@ class ExperimentConfig:
     tuning: TuningConfig
     runtime: RuntimeConfig
     evaluation: EvaluationConfig
-    features: FeaturesConfig
 
     @classmethod
     def from_dict(cls, params: dict) -> "ExperimentConfig":
-        features_params = params.get("features", {})
         return cls(
             data=DataConfig(**params["data"]),
             cv=CVConfig(**params["cv"]),
@@ -84,5 +74,4 @@ class ExperimentConfig:
             tuning=TuningConfig(**params["tuning"]),
             runtime=RuntimeConfig(**params["runtime"]),
             evaluation=EvaluationConfig(**params["evaluation"]),
-            features=FeaturesConfig(**features_params),
         )

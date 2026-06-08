@@ -46,10 +46,5 @@ runtime:
 evaluation:
   metric: MAE
   reconciliation_method: wls_var
-features:
-  use_views: true
-  min_length: 20
-  include_catch22: true
-  include_model_shape: true
 
 

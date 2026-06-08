@@ -82,7 +82,6 @@ plotnine==0.15.4
 propcache==0.5.2
 protobuf==7.35.0
 pyarrow==24.0.0
-pycatch22==0.4.5
 pycparser==3.0
 pydantic==2.13.4
 pydantic_core==2.46.4
