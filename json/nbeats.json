@@ -4,31 +4,15 @@
       "trend",
       "seasonality"
     ],
-    "scaler_type": "standard",
+    "scaler_type": "robust",
     "random_seed": 42
   },
   "run": {
-    "input_size": [
-      384,
-      512
-    ],
-    "max_steps": [
-      500,
-      1000,
-      1500
-    ],
-    "learning_rate": [
-      0.001,
-      0.0005,
-      0.0001
-    ],
-    "batch_size": [
-      32,
-      64
-    ],
-    "windows_batch_size": [
-      64
-    ]
+    "input_size": [384,512],
+    "max_steps": [500,1000,1500],
+    "learning_rate": [0.001,0.0005,0.0001],
+    "batch_size": [32,64],
+    "windows_batch_size": [64]
   },
   "test": {
     "input_size": 10,
