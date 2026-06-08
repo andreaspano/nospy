@@ -57,15 +57,6 @@ class EvaluationConfig:
 
 
 @dataclass
-class LLMConfig:
-    provider: str
-    model: str
-    temperature: float
-    api_key: str | None = None
-    base_url: str | None = None
-
-
-@dataclass
 class FeaturesConfig:
     use_views: bool
     min_length: int
@@ -82,22 +73,9 @@ class ExperimentConfig:
     runtime: RuntimeConfig
     evaluation: EvaluationConfig
     features: FeaturesConfig
-    llm: LLMConfig
 
     @classmethod
     def from_dict(cls, params: dict) -> "ExperimentConfig":
-        llm_path = Path(__file__).resolve().parents[1] / "yaml" / "llm.yaml"
-        if llm_path.exists():
-            with open(llm_path, "r") as f:
-                llm_params = yaml.safe_load(f)
-        else:
-            llm_params = params.get("llm")
-        if not llm_params:
-            raise ValueError(
-                "Missing LLM configuration. "
-                "Provide a valid 'yaml/llm.yaml' file."
-            )
-        llm_config = LLMConfig(**llm_params)
         features_params = params.get("features", {})
         return cls(
             data=DataConfig(**params["data"]),
@@ -107,5 +85,4 @@ class ExperimentConfig:
             runtime=RuntimeConfig(**params["runtime"]),
             evaluation=EvaluationConfig(**params["evaluation"]),
             features=FeaturesConfig(**features_params),
-            llm=llm_config,
         )

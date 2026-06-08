@@ -57,26 +57,6 @@ class FeaturesCalculator:
             self.compute_features()
         return summarize_features(self._features_df)
 
-    def build_prompt(
-        self,
-        model_name: str,
-        h: int,
-        config=None,
-        existing_json: dict | None = None,
-        llm_config=None,
-    ) -> str:
-        """Build a GPT prompt for generating a model.json for *model_name*."""
-        from nospy.prompt import build_model_prompt
-
-        summary = self.summarize()
-        return build_model_prompt(
-            summary=summary,
-            model_name=model_name,
-            h=h,
-            config=config,
-            existing_json=existing_json,
-        )
-
 
 # ============================================================
 # Frequency inference

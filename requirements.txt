@@ -71,7 +71,6 @@ nvidia-nccl-cu13==2.29.7
 nvidia-nvjitlink==13.0.88
 nvidia-nvshmem-cu13==3.4.5
 nvidia-nvtx==13.0.85
-openai==2.40.0
 optuna==4.3.0
 packaging==24.2
 pandas==2.3.3
