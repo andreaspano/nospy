@@ -1,29 +1,25 @@
 {
   "fixed": {
-    "stack_types": [
-      "trend",
-      "seasonality"
-    ],
-    "scaler_type": "robust",
     "random_seed": 42
   },
+
   "run": {
-    "input_size": [60,120,250],
+    "stack_types": [["trend", "trend"], ["trend", "seasonality"]],
+    "input_size": [60, 120, 250],
     "learning_rate": [0.001],
     "max_steps": [1000],
-    "batch_size": [32,64],
-    "windows_batch_size": [64],
-    "n_blocks": [[1,1,1],[2,2,2]],
-    "n_blocks_hidden": [[128,128,128],[256,256,256]]
+    "batch_size": [32, 64, 128],
+    "windows_batch_size": [256, 512, 1024],
+    "scaler_type": ["robust"]
   },
+
   "test": {
+    "stack_types": ["trend", "trend"],
     "input_size": 10,
     "max_steps": 1,
     "learning_rate": 0.001,
     "batch_size": 32,
     "windows_batch_size": 64,
-    "n_blocks": [1,1,1],
-    "n_blocks_hidden": [16,16,16],
     "scaler_type": "standard",
     "random_seed": 42
   }

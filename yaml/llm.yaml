@@ -1,4 +1,0 @@
-# Default LLM provider configuration (overrides per‑experiment settings)
-provider: deepseek
-model: deepseek-v4-pro
-temperature: 0.2

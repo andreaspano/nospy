@@ -12,7 +12,6 @@ venv:
 
 
 run:
-	# Note: LLM functionality in nospy/prompt.py is NOT called by this target.
 	direnv exec . env PYTHONPATH=$(shell pwd) PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $(PYTHON) main.py --config yaml/run.yaml
 
 sync:
@@ -21,10 +20,6 @@ sync:
 test:
 	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/test.yaml
 
-test.: test
-
-check: test
-	@echo "No errors"
 
 freeze:
 	$(PIP) freeze > requirements.txt
