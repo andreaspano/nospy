@@ -2,93 +2,37 @@
   "fixed": {
     "random_seed": 42,
     "batch_size": 11,
-    "windows_batch_size": 128,
+    "windows_batch_size": 256,
     "scaler_type": "robust",
     "dropout_prob_theta": 0.1,
     "activation": "ReLU",
-    "mlp_units": [
-      [128, 128],
-      [128, 128],
-      [128, 128]
-    ],
     "val_check_steps": 500
   },
+
   "run": {
-    "input_size": [
-      96,
-      192,
-      288
-    ],
-    "learning_rate": [
-      0.001,
-      0.0005,
-      0.0001
-    ],
-    "max_steps": [
-      500,
-      1000,
-      1500
-    ],
-    "n_pool_kernel_size": [
-      [
-        2,
-        2,
-        1
-      ],
-      [
-        4,
-        2,
-        1
-      ],
-      [
-        4.0,
-        4,
-        1
-      ]
-    ],
-    "n_freq_downsample": [
-      [
-        1,
-        1,
-        1
-      ],
-      [
-        2,
-        2,
-        1
-      ],
-      [
-        4,
-        2,
-        1
-      ]
-    ]
+    "input_size": [60,120,250 ],
+    "learning_rate": [0.001],
+    "max_steps": [1000],
+    "n_pool_kernel_size": [[10,5,1],[20,5,1],[60,20,1]],
+    "n_freq_downsample": [[5,2,1],[5,2,1],[5,2,1]],
+    "mlp_units": [[128, 128],[256, 256],[256, 256]]
+    "n_blocks": [[1,1,1],[2,2,2]]
   },
+
+
   "test": {
     "input_size": 10,
     "max_steps": 1,
     "learning_rate": 0.01,
     "batch_size": 32,
     "windows_batch_size": 64,
-    "n_pool_kernel_size": [
-      1,
-      1,
-      1
-    ],
-    "n_freq_downsample": [
-      1,
-      1,
-      1
-    ],
+    "n_pool_kernel_size": [1,1,1],
+    "n_freq_downsample": [1,1,1],
     "scaler_type": "standard",
-    "random_seed": 42,
     "dropout_prob_theta": 0.0,
     "activation": "ReLU",
-    "mlp_units": [
-      [16,16],
-      [16,16],
-      [16,16]
-    ],
+    "mlp_units": [[16,16],[16,16],[16,16]],
     "val_check_steps": 1
   }
 }
+
