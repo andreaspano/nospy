@@ -7,20 +7,9 @@
     "dropout_prob_theta": 0.1,
     "activation": "ReLU",
     "mlp_units": [
-      [
-        [
-          128,
-          128
-        ],
-        [
-          128,
-          128
-        ],
-        [
-          128,
-          128
-        ]
-      ]
+      [128, 128],
+      [128, 128],
+      [128, 128]
     ],
     "val_check_steps": 500
   },
@@ -96,21 +85,9 @@
     "dropout_prob_theta": 0.0,
     "activation": "ReLU",
     "mlp_units": [
-      [
-        [
-          16
-        ]
-      ],
-      [
-        [
-          16
-        ]
-      ],
-      [
-        [
-          16
-        ]
-      ]
+      [16],
+      [16],
+      [16]
     ],
     "val_check_steps": 1
   }
