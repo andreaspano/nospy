@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import argparse
+import ray
 from nospy.config import ExperimentConfig
 from nospy.experiment import ForecastExperiment
 from nospy.utils import load_yaml_no_dupes
@@ -37,6 +38,9 @@ def main():
 
     # Re-parse fully now that environment is set
     args = parser.parse_args()
+
+    # Shutdown any lingering Ray processes from previous runs
+    ray.shutdown()
 
     start = time.time()
 
