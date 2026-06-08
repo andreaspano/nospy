@@ -20,6 +20,8 @@ sync:
 test:
 	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/test.yaml
 
+test.: test
+
 check: test
 	@echo "No errors"
 
