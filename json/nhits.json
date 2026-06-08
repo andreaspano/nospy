@@ -71,23 +71,19 @@
     "batch_size": 32,
     "windows_batch_size": 64,
     "n_pool_kernel_size": [
-      1,
-      1,
-      1
+      [1,1,1]
     ],
     "n_freq_downsample": [
-      1,
-      1,
-      1
+      [1,1,1]
     ],
     "scaler_type": "standard",
     "random_seed": 42,
     "dropout_prob_theta": 0.0,
     "activation": "ReLU",
     "mlp_units": [
-      [16],
-      [16],
-      [16]
+      [16,16],
+      [16,16],
+      [16,16]
     ],
     "val_check_steps": 1
   }
