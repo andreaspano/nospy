@@ -2,19 +2,15 @@
 Experiment orchestration for forecasting workflows.
 """
 
-import json
-
 import pandas as pd
 from neuralforecast import NeuralForecast
 
 from nospy.config import ExperimentConfig
 from nospy.plot import save_plots
-from nospy.features import FeaturesCalculator
 
 from nospy.data import download_prices, prepare_timeseries
 from nospy.evaluation import Evaluator
 from nospy.models import ModelFactory
-from nospy.prompt import generate_model_json
 from nospy.utils import make_output_paths, setup_environment, silence
 from nospy.reconcile import reconcile
 
@@ -140,24 +136,7 @@ class ForecastExperiment:
         run_dir = self.output_paths["run_dir"]
         run_dir.mkdir(parents=True, exist_ok=True)
 
-        # Build feature summary and regenerate model configs via Copilot
-        calc = FeaturesCalculator(self.ts, features_config=self.config.features)
-        self.features_df = calc.compute_features()
-        summary = calc.summarize()
-        (run_dir / "features_summary.json").write_text(
-            json.dumps(summary, indent=2)
-        )
-        if not self.config.runtime.test:
-            for model_name in self.config.models:
-                generate_model_json(
-                    calc,
-                    model_name=model_name,
-                    h=self.config.cv.h,
-                    config=self.config,
-                    llm_config=self.config.llm,
-                    out_dir=run_dir,
-                )
-                print(f"Model config updated: json/{model_name.lower().replace('auto', '')}.json")
+        # Feature computation and LLM-based model config generation are removed.
 
         with silence():
             self.run_cross_validation()
