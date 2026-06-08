@@ -20,6 +20,9 @@ sync:
 test:
 	PYTHONPATH=$(shell pwd) $(PYTHON) main.py --config yaml/test.yaml
 
+check: test
+	@echo "No errors"
+
 freeze:
 	$(PIP) freeze > requirements.txt
 
