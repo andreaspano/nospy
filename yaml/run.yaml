@@ -15,7 +15,7 @@ data:
   freq: "B"
 
 cv:
-  h: 5
+  h: 1 
   n_windows: 6
   step_size: 1
   refit: true
@@ -26,8 +26,8 @@ models:
   - AutoTFT
 
 tuning:
-  num_samples: 100 
-  cpus: 6
+  num_samples: 50 
+  cpus: 8
   gpus: 1
   backend: "ray"
   searcher: "optuna"

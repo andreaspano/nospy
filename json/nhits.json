@@ -7,9 +7,9 @@
     "val_check_steps": 100
   },
   "run": {
-    "input_size": [60, 120, 250],
+    "input_size": [120, 250],
     "learning_rate": [0.001],
-    "max_steps": [1000],
+    "max_steps": [500],
     "batch_size": [32, 64],
     "windows_batch_size": [256, 512],
     "n_pool_kernel_size": [[10, 5, 1], [20, 5, 1], [60, 20, 1]],
