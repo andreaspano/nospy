@@ -3,11 +3,14 @@ Evaluation metrics and ranking.
 """
 
 import pandas as pd
-from neuralforecast.losses.numpy import mae, mape
+from neuralforecast.losses.numpy import mae, mape, mse, rmse, smape
 
 METRIC_FUNCTIONS = {
     "MAE": mae,
     "MAPE": mape,
+    "MSE": mse,
+    "RMSE": rmse,
+    "SMAPE": smape,
 }
 
 
