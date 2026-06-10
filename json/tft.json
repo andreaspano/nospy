@@ -9,7 +9,7 @@
     "input_size": [60, 120],
     "hidden_size": [64, 128],
     "learning_rate": [0.0001],
-    "max_steps": [500],
+    "max_steps": [1000],
     "batch_size": [32, 64],
     "windows_batch_size": [64, 128]
   },
