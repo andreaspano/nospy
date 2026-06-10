@@ -2,21 +2,21 @@ data:
   tickers:
     - UCG.MI
     - ISP.MI
-    - BAMI.MI
-    - BPE.MI
-    - BMPS.MI
-    - FBK.MI
-    - MB.MI
-    - G.MI
-    - AZM.MI
-    - UNI.MI
+#    - BAMI.MI
+#    - BPE.MI
+#    - BMPS.MI
+#    - FBK.MI
+#    - MB.MI
+#    - G.MI
+#    - AZM.MI
+#    - UNI.MI
   start_date: "2016-01-01"
   end_date: "2026-04-30"
   freq: "B"
 
 cv:
   h: 1 
-  n_windows: 6
+  n_windows: 2
   step_size: 1
   refit: true
 
@@ -26,7 +26,7 @@ models:
   - AutoTFT
 
 tuning:
-  num_samples: 50 
+  num_samples: 2 
   cpus: 8
   gpus: 1
   backend: "ray"
